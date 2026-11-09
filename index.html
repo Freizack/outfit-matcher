@@ -1,27 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- PAGE SETTINGS: character set and mobile-friendly sizing (viewport-fit=cover lets the page use the full iPhone screen) -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Outfit Matcher</title>
+<!-- HOME SCREEN APP: these tags let the page open fullscreen like an app when added to the iPhone Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Outfit">
 <meta name="theme-color" content="#f3eee6">
+<!-- APP ICON: the icon (a terracotta "O") is embedded in the page so no extra file is needed, plus a small manifest for Android -->
 <link rel="apple-touch-icon" href="data:image/png;base64,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">
 <link rel="icon" href="data:image/png;base64,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">
 <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIk91dGZpdCBNYXRjaGVyIiwgInNob3J0X25hbWUiOiAiT3V0Zml0IiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmM2VlZTYiLCAidGhlbWVfY29sb3IiOiAiI2YzZWVlNiIsICJzdGFydF91cmwiOiAiLiIsICJpY29ucyI6IFt7InNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQUxRQUFBQzBDQUlBQUFDeXI1RmxBQUFOTVVsRVFWUjRuTzNkZTNCVTFSMEg4TFB2N0NhYjNXVHpmajlJVEFBSkNaQUVyRVJFMUJvcTJpclVWNTFXaXE5cC94Q2RFVWM3blQ3d0QzeTBuUlk2S3RPT2lraGJhMVhzS0pSU1hpRkNBbmxBRWdoNWtuZXltOTBrKzk3TjdSOTBNaWdja3B6ejI5eXo2ZTh6L3VOTXp1LzgySHh6OSs3ZGM4OVZ2TDlwRlVIb2VwUnlONERFaGVGQVZCZ09SSVhoUUZRWURrU0Y0VUJVR0E1RWhlRkFWQmdPUklYaFFGUVlEa1NGNFVCVUdBNUVoZUZBVkJnT1JJWGhRRlFZRGtTRjRVQlVHQTVFaGVGQVZCZ09SSVhoUUZRWURrU0Y0VUJVR0E1RWhlRkFWQmdPUklYaFFGUVlEa1NGNFVCVUdBNUVoZUZBVkJnT1JJWGhRRlFZRGtTRjRVQlVHQTVFaGVGQVZCZ09SSVhoUUZRWURrU0Y0VUJVYXJrYm1Ec0twVEk2SlRNNkpkMWdpVGZFeGh0aUV3eVdlRTJFUWFYVnFyUzZLLzlKd1VEUTV3MzRmRUcvTitqMWVoeWpMdHV3eXpyc3NnMjdySU9qWFczZWNZZmMvNDY1TTgvRG9UT2FrbTVlYnNrdGlNM0tNMmZrcUxTNkcvKzhRcTFScWpVYXcvLysxNVNXOVkwZmNJNE1qWGEyam5hMkRqYlYyZHBiSkVrS1FkZWlVTXpMamZHalV6SlNpOHRUaXNzdEN4WXFGSW9RemVJZGQvVFZmZFZYVjkzZlVCUDBlVU0waTR6bVZUaVVhblg2aXRVTDFxNlB5MXMwbC9QNjNjNk80d2ZiRHUwZjY3ODhsL09HMmp3SmgwWWZXWERQQTdscktuVkdrNHh0RERYWE4zMjJkL0Q4V1JsN0FCVDI1eHhLdFRwdjdiMExOenlzalRUSzNRdEpLQ3hLS0N3YU9GZGJ2MiszdmJ0TjduWjRoWGM0VXBhV2xUejJiR1Jjb3R5TmZFM1M0bVZKaTBvNnF3NmQzYlBMNTV5UXV4MTI0Um9PZFlTKytLRW5jMjc3Tm5PRm9NL2IzMWd6MG5yZWNibGpmS0RYNzNiNVBTNlZXcVBSUitxaXphYTBMSE5HVGtwUmFYUktCa3QxaFNMcmxqc1NGeFdmZXZ2MWdYTzF6RTNLS3l6UE9TeTVCZVZQdlJpVmtNdzIzTkhUMmJ4L1gwL3RpWmw4eERBbXArV3Z1eTk3OVYwcWpaWmxNa2xxUGZSWjNkNjNKZ04rbHVHeUNyOXdaSlJWbEcxNVFhbldNSXoxT2NmUHZMZXpxL293bWVYMWlRaFRUTWxqejZhdnVKVmhVa0xJOElYRzQ3LzllZGk5eFlSWk9Bb3FOeFk5K0NQQ2RPbGlxS1doZXRlcmJydU5lZmJNbFd0V1BQRWMyeUZrclAveTBkZGZkZzRQTU04Kzk4THB1NVhpUjU0cTJ2Z0VXeko2YW80ZjJmRVNUeklJSVYwbkR4L1pzYzN2WWprQVJDZW4zL0hLYjB5cG1Ud056TEd3Q2NmaTcvNGcvODc3MmNiMjE1K3Erc092UWQ3MWh5K2NPL3JHSzJ5bElrd3hGUzlzajR4TDRHOWpib1JIT1BMV2JWaTA0Ukcyc1k3ZXJxcWQyNlhKU2FobVJscWJUdTErazIyc1BpYXU0b1ZYNWIxU04zTmhFSTYwNWJlVVBQSTAyOWpKWUtCNjE2c0JqeHUycGE2cVE5M1ZoOW5HR3BQU1ZtLzlsVklkQmhjUlJBOUhaRnhpNmVhdGJPY1poSkNXei85aXY5d0IyOUlWWjk3ZnhmejFmV3gyZnRHbXpiRDloSUxRNFZDb1ZDdWYzcWJSUjdJTjl6aEdtejc3RUxhbEtkNXhSOU9uZTVtSDU5OTVmMHBSS1dBL29TQjBPQmJmOTVobFFTSHo4T2JQOTRYMG0vUzJ3NSs3N1ZibTRhVS9majdDRkFQWUR6aHh3MkZNU2l1b2ZKQjV1Rzlpck8zd1B3SDd1VmJRNzd0NDRCL013M1ZHMDVJSGZnalhEanh4dzdIMG9TMUtGZnRaVzJmVm9UbFlnTk41N01Ca01NQThQT3ZXTzJNeUZ3RDJBMHZRY0NRdUtrNVpXc1pUb2YzSWwxRE4zSUJuek41Mzlpdm00UXFGb3ZqaEp3SDdnU1ZvT0lvMmNwM01qL1YyTzNwQzhpSGxXcGRQSCtNWkhsK3dKUG5tNVZETndCSXhIUEUzM1J5VHhYV3c3YXVyaG1wbVd2ME5wNlZna0tkQzNsMk1WMzVEVGNSd01GOG1uOUpYejM2b255Mi9hMktrOVR4UGhlVEZ5NHpKYVZEOUFCSXVIQVpMUW1ySlNwNEtRWjkzNUZJelZEOHpNZFRTeURWZW9jaGZkeDlNSzZDRUMwZjJyZXNVU3E2dWJCMnRuTWY1MmJKZWF1S3NrTG5xZHA2UFppRWlYRGpTbHQzQ1djSGFOcWVIRFVLSXRiMWx0cXVIdmtHamowd29MSUxxQjRwWTRZaU1TekJuNUhJV3NYVmNCR2xtNW56T2lZa1IzbFU4cWN1RVczVWxWamhTdVE4YmhKQ3hQaG51TEJydjcrR3NrRnF5a3ZuN3hSQVJLeHhKM0ovNEpVa2FIK0Q5UFRIZ3Y5ZE5iN2FJdGs1TXJIQlljbTdpck9BY0hwQmxuZmM0eE9FcWx2dWZEMHVnY0VRbHB2RGZ0ZWF5RG9FME0rdDViY1A4UmZqL05tQUpGQTZRbDhZOU9zSmZoR1ZlanUvdXArQ1JneW9tSzQrL2lHc1U0SmZFd0EweHJ6a3RXNmlySFFLRkl5cWU4UTYycTNuNGJqNWc1aDEzOEh4M2Y0VkNwVExFeG9QMEEwS2djQmdnMXV6N25PUDhSZGo0WFU3K0lnWUxodU42SWkwQTRmQzdBWDVEckZPNytJc1lSTm94UUpSd3FMUTZiVlEwZngyUVAxOFpwd2I1QzRFaVNqaWdsdHI2UFFCL3ZqSk9yWXMyOHhlQklrbzQxTlB0OHpkRGszN1pkam9BdWZnRzlUcUFFQ1VjMDI0Q09VT1RrM1A2WmYzWHBvWllKd0QxT29DWWIrR1FBcktGUXdyd2ZwUWxoS2gwR0k1cnpJY2pCOFRVS2cyR0kzUmszRklZWXVyUWJhbkxRSlJ3UU4yQUpPUGxaNUNwQXo0UGZ4RW84eTBjQ3BVS3BBN0wxQkM3S2dSOVB2NGlVSVFKaHgvbVJWSEtGdzZRcVlYYVExMlljSGlCM2xhWWRoa1VaK3FBRjk5V3J1RVp0NFBVVWVzTjAvOVFhR2dpQUtZVzZua3Vvb1FqNEhHRGJOT3BaZDNwaFovR0FEQzFYQ3Zacmt1VWNCQ2cxMFZqa08vSUFYSFFjbzRNOGhlQklsQTRuRmFBMTBWcmtPM1pDY3piVTEwTmp4elhCN0s3YjRRNWxyOElBMjFVTlA4R2dWSXdDTEpRR1lwQTRSanR2TVJmUkI4VHgxK0VnU0hHd2wvRTBkczFDZkVGRFJTQndtRnJ2OEJmUkEveFMyS1oxd3d3cjdXOWhiOElJSUhDTVRiUXc3L0lUNjZWVkhxSXRaOGdmeDZBQkFvSGtTUmJPKzg5MEpIeFNiSmNCNHRPVHVjdlltM0RjTkFObkQvRFdVR2hWQnFUVWtHYW1SWCtjTGp0VmtkdkowUXZZTVFLUjIvTkNmNGlqQS9lNG1OTTRRMUg3NW1UY3E0M3VCNnh3akUrMkR2VzI4MVpKQmJpenJsWjBSaWlvdUtTT0l2MDFsYUJOQU5JckhBUVFucHFlUThlUER0aU04NllXOEM1dFliZjdSeHFyb2ZxQjRwdzRlZzhmcER6NkJxYm5UL0hxenJpdU9QWWVlSVEvOTJVNElRTHgvaGdiMy9EYVo0S0txM09rbE1BMWM5TXhCY3M0Um92U2EzLytnU29GMGpDaFlNUWN2RWc3eXVWVWx3TzBzbE1hUFNSOFhtTGVDcjBOOWJ3N3hvVkNpS0dZK0JjTGVkcEtlZSs2Yk9TdkdRNTU3dll4UzgvaG1vR2xvamhJSkxVOE5HZmVBcVlVak5OYVZsQTNVd2p2WFExei9DaGxnWmhIMWt0WkRnSTZhMnQ0ang3ejZtNEc2cVpHOUFaVFR4dllaSWtuZDJ6QzdBZldJS0dneEJ5OW9NL1Nod2ZXN0pXcldWOHdQaHNaSDlySGM4ZENSMUh2N0IzdHdQMkEwdmNjTmk3MjNuTzRiVlIwYmxyS2dIN3VaWlNyY25uZU9DQlo4emUrTGMvdzdVRFQ5eHdFRUxxUDN5SDU5bU9oZXMzaGZTKzVOdzE5N0F2SDVHa1UyL3Q4SXpaSVJ1Q0puUTRKZ1Ara3p1M005L0tFV0dLV2ZpZDc4TzJORVViYVZ4NDc4UE13MXUrK0tpL3NRYXduMUFRT2h5RWtMRys3dHAzZjg4OHZLQnlvems5RzdDZktTV1BQaDNCdXRHSzlWSno0MSs1UG83TkRkSERRUWpwT0hiZzNOL2ZaUnVyVktuTG4zcFJIYUdIYlNtamZFM21xclZzWThmNnVvKysrVE1CTDVaZkt3ekNRUWc1LzhtZVZ0YkxwcWEwckpYUHZBUjQ5N29sdDdCMDgzTnNZMTNXb1NNN3R2a214cUNhQ2Fud0NBY2g1TXllWFIzSERyQ05UU2txWGZuTVN5QXJ4T0x5RnE3ZStrdTJEOGx1dS9VL083YTViUExzc2N4QW9QMXlweUZKcDNhLzRYSFlDdGV6bkdPbWw2N1dSWnRQN3R6dWNZd3l0NUJSVmxHNmVTdmJKeUJIVCtmUjExOFc2czZEYVNuZTN5VGNNMkJ1TFBlMmU1WTkvaE8yUjMzNW5PTm4zdHZaVlgxNHRxc0NJa3d4Slk4K3czeWxmTENwN3NUdmZpSGpIcWxzd2k4Y2hKREVoY1ZsVzU1bnZzYmc2T2xvM3IrdnA3WnFKaCtTalltcGVlczI1RlRjelhqSlJKSXVIUGk0WWQvdXNEZ0QvWWF3REFjaFJCc1p0ZXp4bjJhVVZUQlhDSGc5QTQwMUl4ZlAyeTkzVEF6MSt0MHV2OGV0VktrMWVrTkV0Tm1VbG1YT3lFMWVzb0xuQ3p5WGRlaXJ0MThUY0luWERJVnJPSzdJS0YrejlLRXRlcGx1Z2J3QlNaSTZqbjVadC9ldHNIc3J1VnA0aDRNUW90THFicnI3ZTRXVkc4RXZaakRyYnpoZHYrOGRSMCtuM0kzd0N2dHdYS0V6bWdvck4rVlUzS1V4Uk1uV2hDUU5OdFUxZmZyQlVFdURiRDJBbWlmaHVFS2wxV1dVMzdiZzl2V3gyZmx6T2EvUE9kRjUvT0NsZisrWDVkbURvVE92d2pIRm5KNmRXcklxcGJnOE5pc3ZkTS9qOUl6WisrdFA5WjJ0N20rc0VXcWpOeWp6TXh4VElrd3h5VXRXV0hJS1lyTHp6T25aL0JkSlhkWWhXMGZyYUdmcllGT2RyYjJGWnptUytPWjVPSzZtVktsTmFWbkc1RFJEYkx6QmttQ0lqVGZFeHFuMUJwVkdwOVpxVlZxZFVxT1Znc0dnM3h2MCtZSStiOERuOVRoRzNiWmhwM1hJWlJ0MkRnL1l1OXVGMnRBdDFNTG44am0zeVdCZ3RPdlNhQmZBRmpIL0o4TG1pemMwOXpBY2lBckRnYWd3SElnS3c0R29NQnlJQ3NPQnFEQWNpQXJEZ2Fnd0hJZ0t3NEdvTUJ5SUNzT0JxREFjaUFyRGdhZ3dISWdLdzRHb01CeUlDc09CcURBY2lBckRnYWd3SElnS3c0R29NQnlJQ3NPQnFEQWNpQXJEZ2Fnd0hJZ0t3NEdvTUJ5SUNzT0JxREFjaUFyRGdhZ3dISWdLdzRHb01CeUlDc09CcURBY2lBckRnYWd3SElnS3c0R29NQnlJQ3NPQnFEQWNpQXJEZ2Fnd0hJZ0t3NEdvTUJ5SUNzT0JxREFjaU9xLzl5OE4xbVlJaTJZQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiMTgweDE4MCIsICJ0eXBlIjogImltYWdlL3BuZyJ9XX0=">
+<!-- STYLES: everything below controls how the page looks. No outside files are used, so it works offline -->
 <style>
+/* COLOR AND FONT SETTINGS: the colors and fonts used across the page live here as variables so they are easy to change. Also adds iPhone safe-area spacing */
 :root{--bg:#f3eee6;--card:#fbf8f3;--ink:#2a2521;--mute:#8a8077;--line:#ddd3c6;--acc:#a4573a;--accink:#fbf8f3;--sage:#7d8a6e;
 --serif:"Cormorant Garamond","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--sans:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* DARK MODE: when the phone is set to dark mode, the page switches to a dark version of the same colors */
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1613;--card:#231e1a;--ink:#f0e9df;--mute:#a1978b;--line:#3a332c;--acc:#d9805e;--accink:#1a1613;--sage:#9aa98a;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#1a1613;--card:#231e1a;--ink:#f0e9df;--mute:#a1978b;--line:#3a332c;--acc:#d9805e;--accink:#1a1613;--sage:#9aa98a;color-scheme:dark}
+/* BASE RULES: sizing, page background, text font, and the centered content column */
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
 main{max-width:1040px;margin:0 auto;padding:0 20px 80px}
+/* HEADER / TITLES: the big title area on the Closet tab and the section headings */
 .hero{padding:56px 0 40px;border-bottom:1px solid var(--line);margin-bottom:8px}
 .eyebrow{font:500 11px/1 var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--acc);margin:0 0 18px}
 h1{font:400 clamp(44px,11vw,92px)/.95 var(--serif);letter-spacing:-.02em;margin:0 0 20px}
@@ -30,13 +38,16 @@ p.sub{margin:0;color:var(--mute);font:italic 400 clamp(18px,3.2vw,22px)/1.35 var
 h2{display:flex;align-items:baseline;gap:12px;font:400 clamp(26px,5vw,36px)/1.1 var(--serif);text-transform:none;letter-spacing:-.01em;color:var(--ink);margin:56px 0 20px;padding-top:20px;border-top:1px solid var(--line)}
 h2 .n{font:500 11px/1 var(--sans);letter-spacing:.24em;color:var(--acc)}
 h2 #count{font:400 15px var(--sans);color:var(--mute)}
+/* CHIPS: the rounded buttons used for category, occasion and weather choices */
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:99px;padding:9px 18px;font:500 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:.2s}
 .chip:hover{border-color:var(--ink)}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* ADD PHOTOS BUTTON: the large button for adding clothing photos */
 .add{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;width:100%;padding:20px;border-radius:2px;background:var(--ink);color:var(--bg);font:500 12px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;border:0;cursor:pointer;transition:.2s}
 .add:hover{background:var(--acc);color:var(--accink)}
+/* WARDROBE GRID: the photo cards that show each piece, with the color dot, remove button and ★ Statement badge */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:22px 16px}
 .item{background:transparent;border:0;border-radius:0;overflow:visible;position:relative}
 .item img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:2px;background:var(--card);transition:transform .4s,opacity .2s}
@@ -46,7 +57,9 @@ h2 #count{font:400 15px var(--sans);color:var(--mute)}
 .x{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(251,248,243,.88);color:#2a2521;font-size:16px;line-height:1;cursor:pointer;opacity:.0;transition:.2s}
 .item:hover .x,.item:focus-within .x{opacity:1}
 @media (hover:none){.x{opacity:1}}
+/* EMPTY STATES: the message boxes shown when there is nothing to display yet */
 .empty{border:1px solid var(--line);border-radius:2px;padding:48px 20px;text-align:center;color:var(--mute);font:italic 400 19px/1.4 var(--serif)}
+/* OUTFIT CARDS: each suggested outfit with its photos, reason, match score and color strip */
 #outfits{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 #outfits .empty{grid-column:1/-1}
 .out{background:var(--card);border:1px solid var(--line);border-radius:2px;padding:14px;margin:0}
@@ -58,9 +71,11 @@ h2 #count{font:400 15px var(--sans);color:var(--mute)}
 .why{font:italic 400 17px/1.25 var(--serif)}
 .score{font:500 10px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;padding:6px 10px;border-radius:99px;background:transparent;border:1px solid var(--sage);color:var(--sage);white-space:nowrap}
 .pal{display:flex;gap:0;margin-top:12px;height:8px;border-radius:99px;overflow:hidden}.pal i{flex:1;height:100%;border:0;border-radius:0}
+/* SMALL OPTIONS: the "Include outerwear" checkbox row and tip text */
 .opt{display:flex;align-items:center;gap:10px;font-size:14px;margin-top:16px;color:var(--mute)}
 .opt input,.panel .chk input{accent-color:var(--acc);width:16px;height:16px}
 .hint{font-size:13px;color:var(--mute);margin-top:12px}
+/* EDITOR POPUP: the panel that opens when you tap a piece (bottom sheet on phones, centered on larger screens) and its form fields */
 .sheet{position:fixed;inset:0;background:rgba(26,22,19,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:20}
 .sheet.on{display:flex}
 .panel{background:var(--bg);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:6px 6px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom,0px))}
@@ -71,6 +86,7 @@ h2 #count{font:400 15px var(--sans);color:var(--mute)}
 .panel canvas{width:100%;max-width:240px;display:block;margin:0 auto;border-radius:2px;cursor:crosshair;touch-action:manipulation}
 .crow{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-size:18px}
 .crow input[type=color]{width:52px;height:40px;border:1px solid var(--line);border-radius:2px;background:none;padding:2px}
+/* BUTTONS: the outlined and filled action buttons used in the editor and backup area */
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
 .btn{flex:1 1 30%;padding:14px 10px;border-radius:2px;border:1px solid var(--ink);background:transparent;color:var(--ink);font:500 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:.2s}
 .btn:hover{background:var(--ink);color:var(--bg)}
@@ -82,22 +98,27 @@ h2 #count{font:400 15px var(--sans);color:var(--mute)}
 .tt{display:block;font:500 17px/1.2 var(--serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .st{font-size:12px;color:var(--acc);margin-top:6px}
 .item img,.item .meta{cursor:pointer}
+/* STATEMENT BADGE and small text details */
 .star{position:absolute;top:8px;left:8px;background:var(--acc);color:var(--accink);font:500 9px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;padding:6px 9px;border-radius:99px}
 .panel label.chk{display:flex;align-items:center;gap:10px;margin:20px 0 0;font:15px var(--sans);letter-spacing:0;text-transform:none;color:var(--ink)}
+/* RESPONSIVE: larger screens get wider grids; reduced-motion users get no animations */
 @media (min-width:720px){main{padding:0 40px 100px}.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:30px 20px}.sheet{align-items:center}.panel{border-radius:6px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* ACCOUNT TAB: the email box and status message styles */
 .acct{display:flex;gap:8px;margin-top:4px}
 .acct input{flex:1;min-width:0;padding:14px;border-radius:2px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:16px var(--sans)}
 .acct input:focus{outline:0;border-color:var(--ink)}
 .acct .btn{flex:none;padding:14px 20px}
 .msg{font-size:13px;color:var(--sage);margin-top:10px;min-height:18px}
 .msg.err{color:#b0392b}
+/* TABS AND BOTTOM NAVIGATION: show one tab at a time and the fixed bar of Closet / Outfits / Account buttons */
 .tab[hidden]{display:none}
 main{padding-bottom:110px}
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px 9px;background:none;border:0;color:var(--mute);font:500 9.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
 .nav button.on{color:var(--acc)}
 .nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+/* FILTERS: spacing for the Occasion / Weather / Build around controls and the editor chip rows */
 .flt{margin-top:14px}
 .flt .lb{font:500 10px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
 .flt .chips{margin-bottom:4px}
@@ -106,24 +127,29 @@ main{padding-bottom:110px}
 .top h1{font-size:clamp(34px,8vw,54px);margin:0}
 </style>
 </head>
+<!-- PAGE CONTENT: the visible app. It has three tabs (Closet, Outfits, Account), a bottom navigation bar and the editor popup -->
 <body>
 <main>
+ <!-- CLOSET TAB: add photos by category and browse your wardrobe, filtered by category -->
  <div class="tab" data-t="closet">
   <header class="hero"><p class="eyebrow">Your personal wardrobe studio</p>
   <h1>Outfit <em>Matcher</em></h1>
   <p class="sub">Photograph your clothes, tag each piece, and get color-matched outfits.</p></header>
  
+  <!-- Step 1: choose a category (or auto-detect) and add photos from the camera or photo library -->
   <h2><span class="n">01</span>Add clothes</h2>
   <div class="chips" id="chips"></div>
   <button class="add" id="addBtn">Add photos as <span id="curLbl">Tops</span></button>
   <input type="file" id="file" accept="image/*" multiple hidden>
   <div class="hint">Tip: lay each piece flat on a plain background with good light. Photos stay on your device.</div>
  
+  <!-- Step 2: your saved pieces, with category filter chips above the grid -->
   <h2><span class="n">02</span>Your wardrobe <span id="count"></span></h2>
   <div class="chips" id="wardChips" style="margin-bottom:18px"></div>
   <div id="wardrobe"></div>
  </div>
  
+ <!-- OUTFITS TAB: choose occasion, weather and an optional piece to build around, then see the matched outfits -->
  <div class="tab" data-t="outfits" hidden>
   <header class="top"><p class="eyebrow">Styled from your closet</p><h1>Your <em>outfits</em></h1></header>
   <div class="flt"><p class="lb">Occasion</p><div class="chips" id="occChips"></div></div>
@@ -133,6 +159,7 @@ main{padding-bottom:110px}
   <div id="outfits" style="margin-top:20px"></div>
  </div>
  
+ <!-- ACCOUNT TAB: save your email on this device, and export, import or email a backup of your wardrobe -->
  <div class="tab" data-t="account" hidden>
   <header class="top"><p class="eyebrow">Account &amp; backup</p><h1>Your <em>wardrobe</em></h1></header>
   <h2><span class="n">01</span>Your email</h2>
@@ -146,11 +173,13 @@ main{padding-bottom:110px}
   <div class="hint" id="bk">Everything is saved in this browser only. To use your wardrobe on another device: tap Email my wardrobe, open that email on the other device, save the attached file, then tap Import wardrobe there.</div>
  </div>
 </main>
+<!-- BOTTOM NAVIGATION: switches between the three tabs -->
 <nav class="nav" id="nav">
  <button data-tab="closet" class="on"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="13.5" y="3.5" width="7" height="7"/><rect x="3.5" y="13.5" width="7" height="7"/><rect x="13.5" y="13.5" width="7" height="7"/></svg>Closet</button>
  <button data-tab="outfits"><svg viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg>Outfits</button>
  <button data-tab="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>Account</button>
 </nav>
+<!-- EDITOR POPUP: opens when you tap a piece. Lets you change color, name, brand (shoes), type, category, occasions, weather and the statement tag -->
 <div class="sheet" id="sheet"><div class="panel">
 <canvas id="pc"></canvas><div class="tag" style="text-align:center;margin-top:6px">Tap the photo to pick its color</div>
 <label>Color</label><div class="crow"><input type="color" id="eColor"><span id="eColName"></span></div>
@@ -165,22 +194,32 @@ main{padding-bottom:110px}
 <div class="btns"><button class="btn" id="eOut">👗 Outfits</button><button class="btn" id="eAI">✨ Identify</button><button class="btn del" id="eDel">Delete</button><button class="btn pri" id="eDone">Done</button></div>
 </div></div>
  
+<!-- SCRIPT: all the app logic. It runs in the browser and saves data in the browser, so nothing is sent anywhere -->
 <script>
+// CATEGORIES: the five clothing categories used everywhere (key and display name)
 const CATS=[["top","Tops"],["bottom","Bottoms"],["dress","Dresses"],["outer","Outerwear"],["shoes","Shoes"]];
 const LBL=Object.fromEntries(CATS);
+// APP STATE: the list of wardrobe pieces and the current filter / editor selections
 let items=[],cur="auto",sample=null,lim=null,q=Promise.resolve(),editId=null,busy={},focusId="";
+// Shortcut for finding an element on the page by its id
 const $=id=>document.getElementById(id);
  
+// SAVING AND LOADING: the wardrobe is stored in this browser (localStorage), under the saved email if there is one
 let email="";try{email=localStorage.getItem("om_email")||""}catch(e){}
 const keyFor=m=>m?"om_items:"+m.toLowerCase():"om_items";
 try{items=JSON.parse(localStorage.getItem(keyFor(email))||localStorage.getItem("om_items")||"[]")}catch(e){items=[]}
+// One-time cleanup: older shoes saved with a brand in their type (like "Nike Air Force 1") are split into Brand + Shoe type
 const BR=[[/^nike\b/i,"Nike"],[/^(air )?jordan\b/i,"Jordan"],[/^adidas\b/i,"Adidas"],[/^new balance\b/i,"New Balance"],[/^converse\b/i,"Converse"],[/^vans\b/i,"Vans"],[/^puma\b/i,"Puma"],[/^reebok\b/i,"Reebok"],[/^asics\b/i,"Asics"],[/^dr\.? ?martens\b/i,"Dr. Martens"],[/^timberland\b/i,"Timberland"],[/^ugg\b/i,"UGG"]];
 items.forEach(i=>{if(i.cat==="shoes"&&!i.brand&&i.type){const b=BR.find(x=>x[0].test(i.type.trim()));if(b){i.brand=b[1];const t=i.type.toLowerCase();i.type=/boot/.test(t)?"Boots":/loafer/.test(t)?"Loafers":/sandal|slide/.test(t)?"Sandals":/heel/.test(t)?"Heels":/running/.test(t)?"Running shoes":"Sneakers"}}});
+// Cleanup: removes statement tags that an earlier version set automatically
 items.forEach(i=>{if(i.sauto){i.statement=false;delete i.sauto}});
+// Saves the wardrobe to the browser
 function save(){try{localStorage.setItem(keyFor(email),JSON.stringify(items))}catch(e){}}
+// EMAIL HELPERS: checks that an email looks valid and shows messages under the email box
 const okMail=m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
 function emMsg(t,err){const m=$("emMsg");m.textContent=t;m.className="msg"+(err?" err":"")}
  
+// COLOR TOOLS: converts colors to hue / saturation / lightness, decides if a color is a neutral, and gives it a plain name (navy, beige, etc.)
 function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let h=0,s=0;
  if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);
   h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h*=60}
@@ -207,6 +246,7 @@ function colorName(h,s,l){
  if(l>.75&&nm==="red")nm="pink";
  return(l>.7?"light ":l<.28?"dark ":"")+nm}
  
+// PHOTO ANALYSIS: makes a small thumbnail and finds the main color from the middle of the photo, ignoring a plain white background
 function analyze(img){
  const W=img.naturalWidth,H=img.naturalHeight,k=Math.min(1,160/Math.max(W,H));
  const t=document.createElement("canvas");t.width=Math.round(W*k);t.height=Math.round(H*k);
@@ -226,14 +266,17 @@ function analyze(img){
  const bk=Math.min(1,512/Math.max(W,H)),B=document.createElement("canvas");B.width=Math.round(W*bk);B.height=Math.round(H*bk);B.getContext("2d").drawImage(img,0,0,B.width,B.height);
  return{thumb,big:B,h,s,l,neutral:isNeutral(h,s,l),name:colorName(h,s,l)}}
  
+// Turns a piece color into a CSS color for dots and the color strip
 function hsl(it){return`hsl(${Math.round(it.h)} ${Math.round(it.s*100)}% ${Math.round(it.l*100)}%)`}
  
+// ADDING PHOTOS: reads each chosen photo, creates a wardrobe piece from it, and saves it
 function handleFiles(files){
  [...files].forEach(f=>{
   const url=URL.createObjectURL(f),img=new Image();
   img.onload=()=>{try{const a=analyze(img),big=a.big;delete a.big;const it={id:Date.now()+Math.random(),cat:cur==="auto"?"top":cur,auto:cur==="auto",type:"",label:"",...a};items.push(it);save();render();identify(it,big)}catch(e){}URL.revokeObjectURL(url)};
   img.src=url})}
  
+// MATCHING: scores how well two colors go together (neutrals, same family, neighbors, opposites, clashes)
 function dh(a,b){const d=Math.abs(a-b)%360;return d>180?360-d:d}
 function pair(a,b){
  if(a.neutral&&b.neutral){
@@ -247,6 +290,7 @@ function pair(a,b){
  if(a.s>.6&&b.s>.6&&d>25)v-=.15;
  return Math.max(.1,v)}
  
+// Writes the short explanation shown on each outfit card (for example "Complementary")
 function reason(parts){
  if(parts.filter(p=>p.statement).length>1)return"Multiple statement pieces — they may compete";
  if(parts.some(p=>p.statement)&&parts.filter(p=>!p.statement&&!p.neutral).length===0)return"Statement piece up front, everything else neutral";
@@ -260,22 +304,30 @@ function reason(parts){
  return"Bold mix"}
  
  
+// OCCASION AND WEATHER OPTIONS, and the filter choices currently selected
 const OCC=[["casual","Casual"],["work","Work"],["night","Night out"]],WX=[["cold","Cold"],["mild","Mild"],["hot","Hot"]];
 let occF="",wxF="",tab="closet",wardF="";
+// TYPE RULES: keywords in a piece's type decide which occasions it suits (casual, work, night out). Your own choice in the editor overrides these
 const RX={casual:/jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
  work:/pleated|trouser|wide-leg pants|midi skirt|linen pants|dress shoe|button|dress pants|chino|blazer|loafer|trench|polo|cardigan|shirt dress|sweater|slack|oxford|straight-leg|white sneakers/,
  night:/mini skirt|dress shoe|leather|dress|heel|boot|blazer|mini|loafer|maxi|bomber/};
+// Shows Casual, Dressy or Versatile on a card, based on its occasion tags
 function fmLabel(it){if(!it.type&&!(it.occ&&it.occ.length))return"";const t=tagsOf(it),c=t.includes("casual"),d=t.includes("work")||t.includes("night");return c&&!d?"Casual":d&&!c?"Dressy":"Versatile"}
+// Returns a piece's occasion tags: the ones you picked, otherwise guessed from its type
 function tagsOf(it){if(it.occ&&it.occ.length)return it.occ;const t=(it.type||"").toLowerCase();const r=OCC.map(o=>o[0]).filter(k=>RX[k].test(t));return r.length?r:OCC.map(o=>o[0])}
+// Returns a piece's weather tags (cold / mild / hot): the ones you picked, otherwise guessed from its type
 function wxTags(it){if(it.wx&&it.wx.length)return it.wx;const t=(it.type||"").toLowerCase();if(!t)return["cold","mild","hot"];
  if(/puffer|coat|parka|boot/.test(t))return["cold"];
  if(/short|jorts|capri|skirt|sundress|mini|maxi|sandal|slide|tank/.test(t))return["mild","hot"];
  if(/long sleeve/.test(t)||/sweater|sweatshirt|hoodie|cardigan|trench|leather|jacket|bomber|windbreaker|sweatpants|jogger|cargo|jeans|denim|dress pants|chino|blazer|corduroy|trouser|wide-leg|pleated|leggings|track pants|flared|bootcut|overalls/.test(t))return["cold","mild"];
  if(/t-shirt|\btee\b|henley|polo|linen/.test(t))return["mild","hot"];
  return["cold","mild","hot"]}
+// FILTER CHECK: does a piece pass the current occasion and weather filters?
 function wxOK(it,w){return !w||wxTags(it).includes(w)}
 const okF=it=>(!occF||tagsOf(it).includes(occF))&&wxOK(it,wxF);
+// TABS: shows the chosen tab and highlights its button
 function setTab(t){tab=t;document.querySelectorAll(".tab").forEach(x=>x.hidden=x.dataset.t!==t);document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));window.scrollTo(0,0)}
+// CLICK HANDLER: one listener for the tab buttons, the filter chips and the editor chips
 document.addEventListener("click",e=>{
  const n=e.target.closest("[data-tab]");if(n)setTab(n.dataset.tab);
  const o=e.target.closest("[data-occ]");if(o){occF=o.dataset.occ;render()}
@@ -283,8 +335,10 @@ document.addEventListener("click",e=>{
  const w=e.target.closest("[data-wx]");if(w){wxF=w.dataset.wx;render()}
  const wg=e.target.closest("[data-w]");if(wg){const it=ed();if(it){const k=wg.dataset.w,cur=wxTags(it).slice();const i=cur.indexOf(k);if(i>=0)cur.splice(i,1);else cur.push(k);it.wx=cur;fillWx()}}
  const g=e.target.closest("[data-o]");if(g){const it=ed();if(it){const k=g.dataset.o,cur=(it.occ&&it.occ.length?it.occ:tagsOf(it)).slice();const i=cur.indexOf(k);if(i>=0)cur.splice(i,1);else cur.push(k);it.occ=cur;fillOcc()}}});
+// EDITOR CHIPS: draw the weather and occasion toggles for the piece being edited
 function fillWx(){const it=ed();if(!it)return;const on=wxTags(it);$("eWx").innerHTML=WX.map(([k,l])=>`<button type="button" class="chip${on.includes(k)?" on":""}" data-w="${k}">${l}</button>`).join("")}
 function fillOcc(){const it=ed();if(!it)return;const on=tagsOf(it);$("eOcc").innerHTML=OCC.map(([k,l])=>`<button type="button" class="chip${on.includes(k)?" on":""}" data-o="${k}">${l}</button>`).join("")}
+// OUTFIT BUILDER: combines tops + bottoms (or dresses), optional outerwear and shoes, applies the filters, scores each outfit and keeps the best 12
 function build(){
  const fo=items.find(i=>String(i.id)===String(focusId));const by=c=>items.filter(i=>i.cat===c&&okF(i)&&(!fo||fo.cat!==c||fo.id===i.id));
  const tops=by("top"),bots=by("bottom"),dr=by("dress"),out=by("outer"),sh=by("shoes");
@@ -308,6 +362,7 @@ function build(){
   return{parts,sc:Math.max(0,Math.min(1,sc))}
  }).sort((a,b)=>b.sc-a.sc).slice(0,12)}
  
+// DRAWING THE PAGE: redraws filters, wardrobe grid, dropdown and outfit cards from the current state
 function render(){
  $("chips").innerHTML=[["auto","Auto-detect"],...CATS].map(([k,l])=>`<button class="chip${k===cur?" on":""}" data-c="${k}">${l}</button>`).join("");
  $("curLbl").textContent=cur==="auto"?"Auto-detect":LBL[cur];
@@ -331,6 +386,7 @@ function render(){
   <div class="pal">${x.parts.map(p=>`<i style="background:${hsl(p)}"></i>`).join("")}</div></div>`).join("")
   :`<div class="empty">${(occF||wxF)?"No outfits fit these filters yet — try Any, or add more pieces.":focusId?"Nothing to pair with this piece yet — add more pieces from other categories.":hasBase?"Add shoes or outerwear options to see more combos.":"Add at least one top and one bottom (or a dress) to see outfits."}</div>`}
  
+// BUTTON WIRING: connects the page buttons and inputs to the functions above
 $("addBtn").onclick=()=>$("file").click();
 $("file").onchange=e=>{handleFiles(e.target.files);e.target.value=""};
 $("useOuter").onchange=render;
@@ -339,10 +395,13 @@ document.addEventListener("click",e=>{
  const x=e.target.closest("[data-x]");if(x){items=items.filter(i=>String(i.id)!==x.dataset.x);save();render()}});
 document.addEventListener("change",e=>{
  const s=e.target.closest("[data-s]");if(s){const it=items.find(i=>String(i.id)===s.dataset.s);if(it){it.cat=s.value;save();render()}}});
+// HELPERS: escape text for safe display, and work out the name to show for a piece (custom name, brand + type, or color + category)
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const title=i=>i.label||(i.cat==="shoes"&&i.brand?i.brand+(i.type?" "+i.type:" shoes"):i.type)||(i.name+" "+LBL[i.cat].toLowerCase().replace(/s$/,""));
+// COLOR EDITING: convert between color formats and apply a new color to a piece
 function hsl2hex(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12,c=l-a*Math.max(-1,Math.min(k-3,9-k,1));return Math.round(255*c).toString(16).padStart(2,"0")};return"#"+f(0)+f(8)+f(4)}
 function setColor(it,hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);const[h,s,l]=rgb2hsl(r,g,b);Object.assign(it,{h,s,l,neutral:isNeutral(h,s,l),name:colorName(h,s,l)})}
+// OPTIONAL AI IDENTIFY: only used when the page runs inside Claude with permission; offline it does nothing and you pick the type yourself
 function identify(it,canvas){
  if(!sample||!lim||!lim.images||!canvas)return;
  busy[it.id]=1;render();
@@ -350,6 +409,7 @@ function identify(it,canvas){
   if(r&&typeof r.type==="string")it.type=r.type.slice(0,50);
   if(r&&it.auto&&CATS.some(c=>c[0]===r.category))it.cat=r.category;
  }).catch(e=>{if(e&&["not_granted","sampling_disabled","images_unavailable"].includes(e.code))sample=null}).then(()=>{delete busy[it.id];save();render();if(editId!==null&&String(editId)===String(it.id))fillEdit()})}
+// EDITOR: open, fill and close the popup for one piece, and save changes as you type
 const ed=()=>items.find(i=>String(i.id)===String(editId));
 function shoeUI(){const sh=$("eCat").value==="shoes";$("brandWrap").style.display=sh?"":"none";$("eTypeLbl").textContent=sh?"Shoe type":"Type";$("eType").placeholder=sh?"e.g. Sneakers, Boots":"e.g. Long sleeve, Hoodie"}
 function fillEdit(){const it=ed();if(!it)return;
@@ -381,14 +441,17 @@ $("eDel").onclick=()=>{items=items.filter(i=>String(i.id)!==String(editId));clos
 $("eAI").onclick=()=>{const it=ed(),c=document.createElement("canvas"),im=new Image();
  im.onload=()=>{c.width=im.naturalWidth*2;c.height=im.naturalHeight*2;c.getContext("2d").drawImage(im,0,0,c.width,c.height);it.auto=false;identify(it,c);fillEdit()};im.src=it.thumb};
  
+// TYPE SUGGESTIONS: the suggestion list shown in the Type field for each category. You can still type anything
 const TYPES={top:["T-shirt","Long sleeve tee","Polo","Button-up shirt","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Flared jeans","Bootcut jeans","Wide-leg jeans","Jorts","Denim shorts","Shorts","Cargo shorts","Cargo pants","Chinos","Dress pants","Pleated trousers","Wide-leg pants","Corduroy pants","Linen pants","Joggers","Sweatpants","Track pants","Leggings","Capris","Mini skirt","Midi skirt","Maxi skirt","Overalls"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
 function fillTypes(){const c=$("eCat").value;$("types").innerHTML=(TYPES[c]||[]).map(t=>`<option value="${t}">`).join("")}
 $("eCat").addEventListener("change",fillTypes);$("eCat").addEventListener("change",shoeUI);$("eBrand").oninput=e=>{ed().brand=e.target.value.trim()};
 const _oe=openEdit;openEdit=function(id){_oe(id);fillTypes()};
+// BACKUP: export the wardrobe to a file, or import one (new pieces are added, duplicates skipped)
 $("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(items)],{type:"application/json"}));a.download="wardrobe-backup.json";document.body.appendChild(a);a.click();a.remove()};
 $("imp").onclick=()=>$("impf").click();
 $("impf").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d))throw 0;const ids=new Set(items.map(i=>String(i.id)));d.forEach(i=>{if(i&&i.thumb&&!ids.has(String(i.id)))items.push(i)});save();render();$("bk").textContent="Imported "+d.length+" items."}catch(x){$("bk").textContent="That file isn't a valid wardrobe backup."}};r.readAsText(f)};
  
+// EMAIL ACCOUNT: save your email on this device and email yourself a backup (share sheet on phones, mail app on computers)
 $("email").value=email;
 if(email)emMsg("Signed in as "+email+". Your wardrobe is saved under this email.");
 $("emSave").onclick=()=>{const m=$("email").value.trim();
@@ -410,6 +473,7 @@ $("mail").onclick=async()=>{
  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
  emMsg("Your mail app is opening with a message to "+m+". Attach the downloaded wardrobe-backup.json file, then send.");
  setTimeout(()=>{location.href="mailto:"+encodeURIComponent(m).replace("%40","@")+"?subject="+encodeURIComponent("My Outfit Matcher wardrobe")+"&body="+encodeURIComponent(body)},400)};
+// START: draw the page for the first time, then (only inside Claude) check whether the optional AI Identify is available
 render();
 (async()=>{try{if(window.claude){sample=await claude.use("sample");if(sample)lim=await sample.limits()}}catch(e){sample=null}render()})();
 </script>
