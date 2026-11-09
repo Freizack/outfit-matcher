@@ -120,6 +120,7 @@ main{padding-bottom:110px}
   <div class="hint">Tip: lay each piece flat on a plain background with good light. Photos stay on your device.</div>
  
   <h2><span class="n">02</span>Your wardrobe <span id="count"></span></h2>
+  <div class="chips" id="wardChips" style="margin-bottom:18px"></div>
   <div id="wardrobe"></div>
  </div>
  
@@ -133,7 +134,7 @@ main{padding-bottom:110px}
  </div>
  
  <div class="tab" data-t="account" hidden>
-  <header class="top"><p class="eyebrow">Account &amp; backup</p><h1>Your <em>account</em></h1></header>
+  <header class="top"><p class="eyebrow">Account &amp; backup</p><h1>Your <em>wardrobe</em></h1></header>
   <h2><span class="n">01</span>Your email</h2>
   <div class="acct"><input type="email" id="email" placeholder="you@example.com" autocomplete="email" inputmode="email"><button class="btn pri" id="emSave">Save</button></div>
   <div class="hint">Your wardrobe is saved under this email on this device. Use it to email yourself a copy at any time.</div>
@@ -260,16 +261,17 @@ function reason(parts){
  
  
 const OCC=[["casual","Casual"],["work","Work"],["night","Night out"]],WX=[["cold","Cold"],["mild","Mild"],["hot","Hot"]];
-let occF="",wxF="",tab="closet";
-const RX={casual:/sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
- work:/dress shoe|button|dress pants|chino|blazer|loafer|trench|polo|cardigan|shirt dress|sweater|slack|oxford|straight-leg|white sneakers/,
- night:/dress shoe|leather|dress|heel|boot|blazer|mini|loafer|maxi|bomber/};
+let occF="",wxF="",tab="closet",wardF="";
+const RX={casual:/jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
+ work:/pleated|trouser|wide-leg pants|midi skirt|linen pants|dress shoe|button|dress pants|chino|blazer|loafer|trench|polo|cardigan|shirt dress|sweater|slack|oxford|straight-leg|white sneakers/,
+ night:/mini skirt|dress shoe|leather|dress|heel|boot|blazer|mini|loafer|maxi|bomber/};
 function fmLabel(it){if(!it.type&&!(it.occ&&it.occ.length))return"";const t=tagsOf(it),c=t.includes("casual"),d=t.includes("work")||t.includes("night");return c&&!d?"Casual":d&&!c?"Dressy":"Versatile"}
 function tagsOf(it){if(it.occ&&it.occ.length)return it.occ;const t=(it.type||"").toLowerCase();const r=OCC.map(o=>o[0]).filter(k=>RX[k].test(t));return r.length?r:OCC.map(o=>o[0])}
 function wxTags(it){if(it.wx&&it.wx.length)return it.wx;const t=(it.type||"").toLowerCase();if(!t)return["cold","mild","hot"];
  if(/puffer|coat|parka|boot/.test(t))return["cold"];
- if(/long sleeve/.test(t)||/sweater|sweatshirt|hoodie|cardigan|trench|leather|jacket|bomber|windbreaker|sweatpants|jogger|cargo|jeans|denim|dress pants|chino|blazer/.test(t))return["cold","mild"];
- if(/tank|short|sundress|mini|maxi|sandal|slide|t-shirt|\btee\b|henley|polo/.test(t))return["mild","hot"];
+ if(/short|jorts|capri|skirt|sundress|mini|maxi|sandal|slide|tank/.test(t))return["mild","hot"];
+ if(/long sleeve/.test(t)||/sweater|sweatshirt|hoodie|cardigan|trench|leather|jacket|bomber|windbreaker|sweatpants|jogger|cargo|jeans|denim|dress pants|chino|blazer|corduroy|trouser|wide-leg|pleated|leggings|track pants|flared|bootcut|overalls/.test(t))return["cold","mild"];
+ if(/t-shirt|\btee\b|henley|polo|linen/.test(t))return["mild","hot"];
  return["cold","mild","hot"]}
 function wxOK(it,w){return !w||wxTags(it).includes(w)}
 const okF=it=>(!occF||tagsOf(it).includes(occF))&&wxOK(it,wxF);
@@ -277,6 +279,7 @@ function setTab(t){tab=t;document.querySelectorAll(".tab").forEach(x=>x.hidden=x
 document.addEventListener("click",e=>{
  const n=e.target.closest("[data-tab]");if(n)setTab(n.dataset.tab);
  const o=e.target.closest("[data-occ]");if(o){occF=o.dataset.occ;render()}
+ const wd=e.target.closest("[data-ward]");if(wd){wardF=wd.dataset.ward;render()}
  const w=e.target.closest("[data-wx]");if(w){wxF=w.dataset.wx;render()}
  const wg=e.target.closest("[data-w]");if(wg){const it=ed();if(it){const k=wg.dataset.w,cur=wxTags(it).slice();const i=cur.indexOf(k);if(i>=0)cur.splice(i,1);else cur.push(k);it.wx=cur;fillWx()}}
  const g=e.target.closest("[data-o]");if(g){const it=ed();if(it){const k=g.dataset.o,cur=(it.occ&&it.occ.length?it.occ:tagsOf(it)).slice();const i=cur.indexOf(k);if(i>=0)cur.splice(i,1);else cur.push(k);it.occ=cur;fillOcc()}}});
@@ -313,11 +316,13 @@ function render(){
  $("occChips").innerHTML=[["","Any"],...OCC].map(([k,l])=>`<button class="chip${k===occF?" on":""}" data-occ="${k}">${l}</button>`).join("");
  $("wxChips").innerHTML=[["","Any"],...WX].map(([k,l])=>`<button class="chip${k===wxF?" on":""}" data-wx="${k}">${l}</button>`).join("");
  $("count").textContent=items.length?`(${items.length})`:"";
- $("wardrobe").innerHTML=items.length?`<div class="grid">${items.map(i=>`
+ $("wardChips").innerHTML=[["","All"],...CATS].map(([k,l])=>`<button class="chip${k===wardF?" on":""}" data-ward="${k}">${l}${k?" "+items.filter(i=>i.cat===k).length:" "+items.length}</button>`).join("");
+ const vis=items.filter(i=>!wardF||i.cat===wardF);
+ $("wardrobe").innerHTML=vis.length?`<div class="grid">${vis.map(i=>`
   <div class="item"><img src="${i.thumb}" alt="" data-e="${i.id}">${i.statement?'<span class="star">★ Statement</span>':""}<button class="x" data-x="${i.id}" aria-label="Remove">×</button>
   <div class="meta" data-e="${i.id}"><span class="sw" style="background:${hsl(i)}"></span><span style="min-width:0;flex:1"><b class="tt">${esc(title(i))}</b><span class="tag">${busy[i.id]?"Identifying…":LBL[i.cat]+" · "+i.name+(fmLabel(i)?" · "+fmLabel(i):"")}</span></span>
   </div></div>`).join("")}</div>`
-  :`<div class="empty">No clothes yet. Pick a category above, then add photos.</div>`;
+  :`<div class="empty">${items.length?"No "+LBL[wardF].toLowerCase()+" yet. Add some above.":"No clothes yet. Pick a category above, then add photos."}</div>`;
  const o=build();
  const hasBase=items.some(i=>i.cat==="dress")||(items.some(i=>i.cat==="top")&&items.some(i=>i.cat==="bottom"));
  $("outfits").innerHTML=o.length?o.map(x=>`
@@ -376,7 +381,7 @@ $("eDel").onclick=()=>{items=items.filter(i=>String(i.id)!==String(editId));clos
 $("eAI").onclick=()=>{const it=ed(),c=document.createElement("canvas"),im=new Image();
  im.onload=()=>{c.width=im.naturalWidth*2;c.height=im.naturalHeight*2;c.getContext("2d").drawImage(im,0,0,c.width,c.height);it.auto=false;identify(it,c);fillEdit()};im.src=it.thumb};
  
-const TYPES={top:["T-shirt","Long sleeve tee","Polo","Button-up shirt","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Chinos","Joggers","Sweatpants","Cargo pants","Shorts","Dress pants"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
+const TYPES={top:["T-shirt","Long sleeve tee","Polo","Button-up shirt","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Flared jeans","Bootcut jeans","Wide-leg jeans","Jorts","Denim shorts","Shorts","Cargo shorts","Cargo pants","Chinos","Dress pants","Pleated trousers","Wide-leg pants","Corduroy pants","Linen pants","Joggers","Sweatpants","Track pants","Leggings","Capris","Mini skirt","Midi skirt","Maxi skirt","Overalls"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
 function fillTypes(){const c=$("eCat").value;$("types").innerHTML=(TYPES[c]||[]).map(t=>`<option value="${t}">`).join("")}
 $("eCat").addEventListener("change",fillTypes);$("eCat").addEventListener("change",shoeUI);$("eBrand").oninput=e=>{ed().brand=e.target.value.trim()};
 const _oe=openEdit;openEdit=function(id){_oe(id);fillTypes()};
