@@ -60,7 +60,7 @@ h2 #count{font:400 15px var(--sans);color:var(--mute)}
 /* EMPTY STATES: the message boxes shown when there is nothing to display yet */
 .empty{border:1px solid var(--line);border-radius:2px;padding:48px 20px;text-align:center;color:var(--mute);font:italic 400 19px/1.4 var(--serif)}
 /* OUTFIT CARDS: each suggested outfit with its photos, reason, match score and color strip */
-#outfits{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+#outfits,#savedOut{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 #outfits .empty{grid-column:1/-1}
 .out{background:var(--card);border:1px solid var(--line);border-radius:2px;padding:14px;margin:0}
 .row{display:flex;gap:8px}
@@ -125,6 +125,13 @@ main{padding-bottom:110px}
 .occ{display:flex;flex-wrap:wrap;gap:8px}
 .top{padding:36px 0 8px}
 .top h1{font-size:clamp(34px,8vw,54px);margin:0}
+/* SAVE BUTTON, LAYERING / WARNING NOTES, and a rule so hidden elements stay hidden */
+.sv{margin-top:12px;padding:10px 14px;border-radius:2px;border:1px solid var(--ink);background:transparent;color:var(--ink);font:500 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:.2s}
+.sv:hover{background:var(--ink);color:var(--bg)}
+.sv.on{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+.note{font-size:12px;color:var(--acc);margin-top:10px}
+.note.warn{color:#b0392b}
+[hidden]{display:none!important}
 </style>
 </head>
 <!-- PAGE CONTENT: the visible app. It has three tabs (Closet, Outfits, Account), a bottom navigation bar and the editor popup -->
@@ -156,6 +163,9 @@ main{padding-bottom:110px}
   <div class="flt"><p class="lb">Weather</p><div class="chips" id="wxChips"></div></div>
   <div class="flt"><p class="lb">Build around</p><select id="focus" aria-label="Build outfits around a piece"></select></div>
   <label class="opt"><input type="checkbox" id="useOuter" checked> Include outerwear when available</label>
+  <!-- SAVED OUTFITS: outfits you starred with the Save button, shown above the suggestions -->
+  <div id="savedWrap" hidden><h2><span class="n">&#9733;</span>Saved outfits <span id="savedCount"></span></h2><div id="savedOut"></div></div>
+  <h2 id="sugHead" hidden><span class="n">&#10022;</span>Suggestions</h2>
   <div id="outfits" style="margin-top:20px"></div>
  </div>
  
@@ -207,6 +217,7 @@ const $=id=>document.getElementById(id);
 // SAVING AND LOADING: the wardrobe is stored in this browser (localStorage), under the saved email if there is one
 let email="";try{email=localStorage.getItem("om_email")||""}catch(e){}
 const keyFor=m=>m?"om_items:"+m.toLowerCase():"om_items";
+const keySaved=m=>m?"om_saved:"+m.toLowerCase():"om_saved";
 try{items=JSON.parse(localStorage.getItem(keyFor(email))||localStorage.getItem("om_items")||"[]")}catch(e){items=[]}
 // One-time cleanup: older shoes saved with a brand in their type (like "Nike Air Force 1") are split into Brand + Shoe type
 const BR=[[/^nike\b/i,"Nike"],[/^(air )?jordan\b/i,"Jordan"],[/^adidas\b/i,"Adidas"],[/^new balance\b/i,"New Balance"],[/^converse\b/i,"Converse"],[/^vans\b/i,"Vans"],[/^puma\b/i,"Puma"],[/^reebok\b/i,"Reebok"],[/^asics\b/i,"Asics"],[/^dr\.? ?martens\b/i,"Dr. Martens"],[/^timberland\b/i,"Timberland"],[/^ugg\b/i,"UGG"]];
@@ -215,6 +226,13 @@ items.forEach(i=>{if(i.cat==="shoes"&&!i.brand&&i.type){const b=BR.find(x=>x[0].
 items.forEach(i=>{if(i.sauto){i.statement=false;delete i.sauto}});
 // Saves the wardrobe to the browser
 function save(){try{localStorage.setItem(keyFor(email),JSON.stringify(items))}catch(e){}}
+// SAVED OUTFITS: each saved outfit is a list of piece IDs, stored in the browser per email (separately from the wardrobe, so old saved wardrobes still load)
+function loadSaved(m){try{const a=JSON.parse(localStorage.getItem(keySaved(m))||"[]");return Array.isArray(a)?a.filter(x=>Array.isArray(x)&&x.length).map(x=>x.map(String)):[]}catch(e){return[]}}
+let saved=loadSaved(email);
+function saveSaved(){try{localStorage.setItem(keySaved(email),JSON.stringify(saved))}catch(e){}}
+const skey=ids=>[...ids].map(String).sort().join(",");
+const isSaved=ids=>saved.some(x=>skey(x)===skey(ids));
+function toggleSaved(ids){const k=skey(ids),i=saved.findIndex(x=>skey(x)===k);if(i>=0)saved.splice(i,1);else saved.push(ids.map(String));saveSaved();render()}
 // EMAIL HELPERS: checks that an email looks valid and shows messages under the email box
 const okMail=m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
 function emMsg(t,err){const m=$("emMsg");m.textContent=t;m.className="msg"+(err?" err":"")}
@@ -308,7 +326,7 @@ function reason(parts){
 const OCC=[["casual","Casual"],["work","Work"],["night","Night out"]],WX=[["cold","Cold"],["mild","Mild"],["hot","Hot"]];
 let occF="",wxF="",tab="closet",wardF="";
 // TYPE RULES: keywords in a piece's type decide which occasions it suits (casual, work, night out). Your own choice in the editor overrides these
-const RX={casual:/jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
+const RX={casual:/vest|jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
  work:/pleated|trouser|wide-leg pants|midi skirt|linen pants|dress shoe|button|dress pants|chino|blazer|loafer|trench|polo|cardigan|shirt dress|sweater|slack|oxford|straight-leg|white sneakers/,
  night:/mini skirt|dress shoe|leather|dress|heel|boot|blazer|mini|loafer|maxi|bomber/};
 // Shows Casual, Dressy or Versatile on a card, based on its occasion tags
@@ -317,9 +335,9 @@ function fmLabel(it){if(!it.type&&!(it.occ&&it.occ.length))return"";const t=tags
 function tagsOf(it){if(it.occ&&it.occ.length)return it.occ;const t=(it.type||"").toLowerCase();const r=OCC.map(o=>o[0]).filter(k=>RX[k].test(t));return r.length?r:OCC.map(o=>o[0])}
 // Returns a piece's weather tags (cold / mild / hot): the ones you picked, otherwise guessed from its type
 function wxTags(it){if(it.wx&&it.wx.length)return it.wx;const t=(it.type||"").toLowerCase();if(!t)return["cold","mild","hot"];
- if(/puffer|coat|parka|boot/.test(t))return["cold"];
+ if(/puffer jacket|coat|parka|boot|winter/.test(t))return["cold"];
  if(/short|jorts|capri|skirt|sundress|mini|maxi|sandal|slide|tank/.test(t))return["mild","hot"];
- if(/long sleeve/.test(t)||/sweater|sweatshirt|hoodie|cardigan|trench|leather|jacket|bomber|windbreaker|sweatpants|jogger|cargo|jeans|denim|dress pants|chino|blazer|corduroy|trouser|wide-leg|pleated|leggings|track pants|flared|bootcut|overalls/.test(t))return["cold","mild"];
+ if(/long sleeve/.test(t)||/sweater|sweatshirt|hoodie|vest|gilet|cardigan|trench|leather|jacket|bomber|windbreaker|sweatpants|jogger|cargo|jeans|denim|dress pants|chino|blazer|corduroy|trouser|wide-leg|pleated|leggings|track pants|flared|bootcut|overalls/.test(t))return["cold","mild"];
  if(/t-shirt|\btee\b|henley|polo|linen/.test(t))return["mild","hot"];
  return["cold","mild","hot"]}
 // FILTER CHECK: does a piece pass the current occasion and weather filters?
@@ -338,9 +356,32 @@ document.addEventListener("click",e=>{
 // EDITOR CHIPS: draw the weather and occasion toggles for the piece being edited
 function fillWx(){const it=ed();if(!it)return;const on=wxTags(it);$("eWx").innerHTML=WX.map(([k,l])=>`<button type="button" class="chip${on.includes(k)?" on":""}" data-w="${k}">${l}</button>`).join("")}
 function fillOcc(){const it=ed();if(!it)return;const on=tagsOf(it);$("eOcc").innerHTML=OCC.map(([k,l])=>`<button type="button" class="chip${on.includes(k)?" on":""}" data-o="${k}">${l}</button>`).join("")}
-// OUTFIT BUILDER: combines tops + bottoms (or dresses), optional outerwear and shoes, applies the filters, scores each outfit and keeps the best 12
+// LAYERING AND TYPE HELPERS: spot vests, pieces that can go over a vest, T-shirts and graphic tees
+function isVest(it){return it.cat==="outer"&&/vest|gilet/i.test(it.type||"")}
+function canOverVest(it){const t=(it.type||"").toLowerCase();return(it.cat==="outer"||it.cat==="top")&&/zip|hoodie|denim jacket|jean jacket|cardigan/.test(t)&&!/puffer|winter|parka|coat|down|ski|vest|gilet/.test(t)}
+function isTee(it){const t=(it.type||"").toLowerCase();return /t-shirt|\btee\b/.test(t)&&!/long sleeve/.test(t)}
+// A T-shirt whose weather tags were guessed (not chosen by you) as mild/hot; in Cold weather it can still be a base layer under outerwear
+function teeBase(it){return it.cat==="top"&&isTee(it)&&!(it.wx&&it.wx.length)&&!wxTags(it).includes("cold")}
+function isGraphic(it){return /graphic|print|logo|slogan|band tee/i.test(it.type||"")}
+// If an outfit layers a vest under a hoodie / jacket / cardigan, returns [vest, outer layer]
+function layerOf(parts){const v=parts.find(isVest);if(!v)return null;const o=parts.find(p=>p!==v&&canOverVest(p)&&(p.cat==="outer"||parts.filter(q=>q.cat==="top").length>1));return o?[v,o]:null}
+// SCORING: average how well each pair of pieces goes together, then adjust for too many colors and statement pieces
+function scoreParts(parts){
+ let sum=0,n=0;
+ for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){sum+=pair(parts[i],parts[j]);n++}
+ let sc=n?sum/n:.8;
+ const ch=parts.filter(p=>!p.neutral);
+ if(ch.length>=3)sc-=.15;
+ const stc=parts.filter(p=>p.statement).length;
+ if(stc>1)sc-=.2*(stc-1);
+ if(stc===1){const loud=parts.filter(p=>!p.statement&&!p.neutral).length;sc+=loud===0?.08:-.1*loud}
+ sc+=parts.length*.01;
+ return Math.max(0,Math.min(1,sc))}
+// OUTFIT BUILDER: combines tops + bottoms (or dresses), optional outerwear and shoes, plus vest-under-layer combos; applies the filters, hides outfits with 2+ statement pieces (unless that would leave none), and keeps the best 12
 function build(){
- const fo=items.find(i=>String(i.id)===String(focusId));const by=c=>items.filter(i=>i.cat===c&&okF(i)&&(!fo||fo.cat!==c||fo.id===i.id));
+ const fo=items.find(i=>String(i.id)===String(focusId));
+ const poolOK=i=>okF(i)||(wxF==="cold"&&teeBase(i)&&(!occF||tagsOf(i).includes(occF)));
+ const by=c=>items.filter(i=>i.cat===c&&poolOK(i)&&(!fo||fo.cat!==c||fo.id===i.id));
  const tops=by("top"),bots=by("bottom"),dr=by("dress"),out=by("outer"),sh=by("shoes");
  const useOut=((fo&&fo.cat==="outer")||(wxF==="cold"?true:$("useOuter").checked))&&out.length>0;
  const bases=[];
@@ -349,18 +390,28 @@ function build(){
  let res=bases;
  if(useOut)res=res.flatMap(b=>out.map(o=>[...b,o]));
  if(sh.length)res=res.flatMap(b=>sh.map(s=>[...b,s]));
- return res.map(parts=>{
-  let sum=0,n=0;
-  for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){sum+=pair(parts[i],parts[j]);n++}
-  let sc=n?sum/n:.8;
-  const ch=parts.filter(p=>!p.neutral);
-  if(ch.length>=3)sc-=.15;
-  const stc=parts.filter(p=>p.statement).length;
-  if(stc>1)sc-=.2*(stc-1);
-  if(stc===1){const loud=parts.filter(p=>!p.statement&&!p.neutral).length;sc+=loud===0?.08:-.1*loud}
-  sc+=parts.length*.01;
-  return{parts,sc:Math.max(0,Math.min(1,sc))}
- }).sort((a,b)=>b.sc-a.sc).slice(0,12)}
+ let all=res.map(parts=>({parts,sc:scoreParts(parts)}));
+ // Layered outfits: a vest under a hoodie, zip-up, denim jacket or cardigan (never under a puffer or winter jacket)
+ const vests=items.filter(i=>isVest(i)&&okF(i)),overs=items.filter(i=>canOverVest(i)&&okF(i));
+ if(vests.length&&overs.length&&(wxF==="cold"||$("useOuter").checked||(fo&&(isVest(fo)||canOverVest(fo))))){
+  const aT=items.filter(i=>i.cat==="top"&&poolOK(i)),aB=items.filter(i=>i.cat==="bottom"&&poolOK(i)),aD=items.filter(i=>i.cat==="dress"&&poolOK(i));
+  const lb=[];aT.forEach(t=>aB.forEach(b=>lb.push([t,b])));aD.forEach(d=>lb.push([d]));
+  let lr=[];
+  lb.forEach(b=>vests.forEach(v=>overs.forEach(o=>{if(o.id!==v.id&&!b.some(x=>x.id===o.id||x.id===v.id))lr.push([...b,v,o])})));
+  if(sh.length)lr=lr.flatMap(b=>sh.map(s=>[...b,s]));
+  all=all.concat(lr.map(parts=>({parts,sc:scoreParts(parts),layered:true})));
+ }
+ if(fo)all=all.filter(o=>o.parts.some(p=>p.id===fo.id));
+ // Cold weather: a T-shirt is only fine as a base layer when the outfit also has outerwear
+ if(wxF==="cold")all=all.filter(o=>!o.parts.some(teeBase)||o.parts.some(p=>p.cat==="outer"));
+ // One statement piece: hide outfits with 2+ statement pieces, but show them anyway if nothing else is left
+ const calm=all.filter(o=>o.parts.filter(p=>p.statement).length<2);
+ const pool=calm.length?calm:all;
+ // Reserve up to 3 spots for layered outfits so they are not crowded out
+ const lay=pool.filter(o=>o.layered).sort((a,b)=>b.sc-a.sc).slice(0,3);
+ const rest=pool.filter(o=>!o.layered).sort((a,b)=>b.sc-a.sc).slice(0,12-lay.length);
+ return lay.concat(rest).sort((a,b)=>b.sc-a.sc)}
+ 
  
 // DRAWING THE PAGE: redraws filters, wardrobe grid, dropdown and outfit cards from the current state
 function render(){
@@ -380,11 +431,25 @@ function render(){
   :`<div class="empty">${items.length?"No "+LBL[wardF].toLowerCase()+" yet. Add some above.":"No clothes yet. Pick a category above, then add photos."}</div>`;
  const o=build();
  const hasBase=items.some(i=>i.cat==="dress")||(items.some(i=>i.cat==="top")&&items.some(i=>i.cat==="bottom"));
- $("outfits").innerHTML=o.length?o.map(x=>`
-  <div class="out"><div class="row">${x.parts.map(p=>`<figure><img src="${p.thumb}" alt=""><figcaption>${p.statement?"★ ":""}${esc(title(p))}</figcaption></figure>`).join("")}</div>
-  <div class="hd"><span class="why">${reason(x.parts)}</span><span class="score">${Math.round(x.sc*100)}% match</span></div>
-  <div class="pal">${x.parts.map(p=>`<i style="background:${hsl(p)}"></i>`).join("")}</div></div>`).join("")
+ // Saved outfits: look up each saved list of piece IDs; skip any whose pieces were deleted
+ const sp=saved.map(ids=>ids.map(id=>items.find(i=>String(i.id)===id))).filter(ps=>ps.length&&ps.every(Boolean));
+ $("savedOut").innerHTML=sp.map(ps=>card(ps,scoreParts(ps))).join("");
+ $("savedWrap").hidden=!sp.length;$("sugHead").hidden=!sp.length;
+ $("savedCount").textContent=sp.length?`(${sp.length})`:"";
+ $("outfits").innerHTML=o.length?o.map(x=>card(x.parts,x.sc)).join("")
   :`<div class="empty">${(occF||wxF)?"No outfits fit these filters yet — try Any, or add more pieces.":focusId?"Nothing to pair with this piece yet — add more pieces from other categories.":hasBase?"Add shoes or outerwear options to see more combos.":"Add at least one top and one bottom (or a dress) to see outfits."}</div>`}
+// OUTFIT CARD: photos, reason, match score, color strip, layering note, graphic-tee warning and the Save / Saved button
+function card(parts,sc){
+ const ids=parts.map(p=>String(p.id)),sv=isSaved(ids),lay=layerOf(parts),top=parts.find(p=>p.cat==="top");
+ const warn=top&&isGraphic(top)&&parts.some(p=>p.statement&&p!==top);
+ return `
+  <div class="out"><div class="row">${parts.map(p=>`<figure><img src="${p.thumb}" alt=""><figcaption>${p.statement?"★ ":""}${esc(title(p))}</figcaption></figure>`).join("")}</div>
+  <div class="hd"><span class="why">${reason(parts)}</span><span class="score">${Math.round(sc*100)}% match</span></div>
+  <div class="pal">${parts.map(p=>`<i style="background:${hsl(p)}"></i>`).join("")}</div>
+  ${lay?`<div class="note">Layered: ${esc(title(lay[0]))} under ${esc(title(lay[1]))}</div>`:""}
+  ${warn?'<div class="note warn">⚠ No plain top — graphic tee with a statement piece</div>':""}
+  <button class="sv${sv?" on":""}" data-sv="${ids.join(",")}">${sv?"★ Saved":"☆ Save"}</button></div>`}
+ 
  
 // BUTTON WIRING: connects the page buttons and inputs to the functions above
 $("addBtn").onclick=()=>$("file").click();
@@ -392,7 +457,8 @@ $("file").onchange=e=>{handleFiles(e.target.files);e.target.value=""};
 $("useOuter").onchange=render;
 document.addEventListener("click",e=>{
  const c=e.target.closest("[data-c]");if(c){cur=c.dataset.c;render()}
- const x=e.target.closest("[data-x]");if(x){items=items.filter(i=>String(i.id)!==x.dataset.x);save();render()}});
+ const x=e.target.closest("[data-x]");if(x){items=items.filter(i=>String(i.id)!==x.dataset.x);save();render()}
+ const sv=e.target.closest("[data-sv]");if(sv)toggleSaved(sv.dataset.sv.split(","))});
 document.addEventListener("change",e=>{
  const s=e.target.closest("[data-s]");if(s){const it=items.find(i=>String(i.id)===s.dataset.s);if(it){it.cat=s.value;save();render()}}});
 // HELPERS: escape text for safe display, and work out the name to show for a piece (custom name, brand + type, or color + category)
@@ -442,14 +508,19 @@ $("eAI").onclick=()=>{const it=ed(),c=document.createElement("canvas"),im=new Im
  im.onload=()=>{c.width=im.naturalWidth*2;c.height=im.naturalHeight*2;c.getContext("2d").drawImage(im,0,0,c.width,c.height);it.auto=false;identify(it,c);fillEdit()};im.src=it.thumb};
  
 // TYPE SUGGESTIONS: the suggestion list shown in the Type field for each category. You can still type anything
-const TYPES={top:["T-shirt","Long sleeve tee","Polo","Button-up shirt","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Flared jeans","Bootcut jeans","Wide-leg jeans","Jorts","Denim shorts","Shorts","Cargo shorts","Cargo pants","Chinos","Dress pants","Pleated trousers","Wide-leg pants","Corduroy pants","Linen pants","Joggers","Sweatpants","Track pants","Leggings","Capris","Mini skirt","Midi skirt","Maxi skirt","Overalls"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
+const TYPES={top:["T-shirt","Graphic tee","Long sleeve tee","Zip-up hoodie","Polo","Button-up shirt","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Flared jeans","Bootcut jeans","Wide-leg jeans","Jorts","Denim shorts","Shorts","Cargo shorts","Cargo pants","Chinos","Dress pants","Pleated trousers","Wide-leg pants","Corduroy pants","Linen pants","Joggers","Sweatpants","Track pants","Leggings","Capris","Mini skirt","Midi skirt","Maxi skirt","Overalls"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Vest","Puffer vest","Fleece vest","Zip-up hoodie","Winter jacket","Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
 function fillTypes(){const c=$("eCat").value;$("types").innerHTML=(TYPES[c]||[]).map(t=>`<option value="${t}">`).join("")}
 $("eCat").addEventListener("change",fillTypes);$("eCat").addEventListener("change",shoeUI);$("eBrand").oninput=e=>{ed().brand=e.target.value.trim()};
 const _oe=openEdit;openEdit=function(id){_oe(id);fillTypes()};
 // BACKUP: export the wardrobe to a file, or import one (new pieces are added, duplicates skipped)
-$("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(items)],{type:"application/json"}));a.download="wardrobe-backup.json";document.body.appendChild(a);a.click();a.remove()};
+// Backup file format: the wardrobe pieces plus the saved outfits (old backups that are just a list of pieces still import)
+const pack=()=>JSON.stringify({app:"outfit-matcher",v:2,items,saved});
+$("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([pack()],{type:"application/json"}));a.download="wardrobe-backup.json";document.body.appendChild(a);a.click();a.remove()};
 $("imp").onclick=()=>$("impf").click();
-$("impf").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d))throw 0;const ids=new Set(items.map(i=>String(i.id)));d.forEach(i=>{if(i&&i.thumb&&!ids.has(String(i.id)))items.push(i)});save();render();$("bk").textContent="Imported "+d.length+" items."}catch(x){$("bk").textContent="That file isn't a valid wardrobe backup."}};r.readAsText(f)};
+$("impf").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);const arr=Array.isArray(d)?d:d&&d.items;if(!Array.isArray(arr))throw 0;
+ const ids=new Set(items.map(i=>String(i.id)));arr.forEach(i=>{if(i&&i.thumb&&!ids.has(String(i.id)))items.push(i)});
+ let m=0;if(d&&!Array.isArray(d)&&Array.isArray(d.saved)){const have=new Set(saved.map(skey));d.saved.forEach(x=>{if(Array.isArray(x)&&x.length&&!have.has(skey(x))){saved.push(x.map(String));have.add(skey(x));m++}})}
+ save();saveSaved();render();$("bk").textContent="Imported "+arr.length+" items"+(m?" and "+m+" saved outfit"+(m>1?"s":""):"")+"."}catch(x){$("bk").textContent="That file isn't a valid wardrobe backup."}};r.readAsText(f)};
  
 // EMAIL ACCOUNT: save your email on this device and email yourself a backup (share sheet on phones, mail app on computers)
 $("email").value=email;
@@ -458,17 +529,17 @@ $("emSave").onclick=()=>{const m=$("email").value.trim();
  if(!okMail(m)){emMsg("Enter a valid email address.",1);return}
  let had=null;try{had=localStorage.getItem(keyFor(m))}catch(e){}
  const cur=items;email=m;try{localStorage.setItem("om_email",m)}catch(e){}
- if(had){try{items=JSON.parse(had)}catch(e){items=cur}emMsg("Welcome back — loaded the wardrobe saved under "+m+".")}
- else{items=cur;save();emMsg("Saved. Your wardrobe is now tied to "+m+".")}
+ if(had){saved=loadSaved(m);try{items=JSON.parse(had)}catch(e){items=cur}emMsg("Welcome back — loaded the wardrobe saved under "+m+".")}
+ else{items=cur;save();saveSaved();emMsg("Saved. Your wardrobe is now tied to "+m+".")}
  render()};
 $("mail").onclick=async()=>{
  const m=($("email").value||email).trim();
  if(!okMail(m)){emMsg("Enter your email above first.",1);$("email").focus();return}
  if(m!==email)$("emSave").click();
  if(!items.length){emMsg("Add some clothes first, then email your wardrobe.",1);return}
- const json=JSON.stringify(items),file=new File([json],"wardrobe-backup.json",{type:"application/json"});
+ const json=pack(),file=new File([json],"wardrobe-backup.json",{type:"application/json"});
  const lines=items.slice(0,25).map(i=>"- "+title(i)+" ("+LBL[i.cat]+", "+i.name+(i.statement?", statement":"")+")").join("\n");
- const body="My Outfit Matcher wardrobe ("+items.length+" items):\n\n"+lines+(items.length>25?"\n...and "+(items.length-25)+" more":"")+"\n\nThe full backup file (wardrobe-backup.json) with photos is attached. Import it in Outfit Matcher under Backup.";
+ const body="My Outfit Matcher wardrobe ("+items.length+" items"+(saved.length?" and "+saved.length+" saved outfits":"")+"):\n\n"+lines+(items.length>25?"\n...and "+(items.length-25)+" more":"")+"\n\nThe full backup file (wardrobe-backup.json) with photos is attached. Import it in Outfit Matcher under Backup.";
  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"My Outfit Matcher wardrobe",text:body});emMsg("Choose your mail app and send it to "+m+" — the backup file is attached.");return}}catch(e){if(e&&e.name==="AbortError")return}
  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
  emMsg("Your mail app is opening with a message to "+m+". Attach the downloaded wardrobe-backup.json file, then send.");
@@ -478,4 +549,4 @@ render();
 (async()=>{try{if(window.claude){sample=await claude.use("sample");if(sample)lim=await sample.limits()}}catch(e){sample=null}render()})();
 </script>
 </body>
-</html>
+</html> 
