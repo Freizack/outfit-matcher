@@ -60,7 +60,7 @@ h2 #count{font:400 15px var(--sans);color:var(--mute)}
 /* EMPTY STATES: the message boxes shown when there is nothing to display yet */
 .empty{border:1px solid var(--line);border-radius:2px;padding:48px 20px;text-align:center;color:var(--mute);font:italic 400 19px/1.4 var(--serif)}
 /* OUTFIT CARDS: each suggested outfit with its photos, reason, match score and color strip */
-#outfits,#savedOut{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+#outfits{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
 #outfits .empty{grid-column:1/-1}
 .out{background:var(--card);border:1px solid var(--line);border-radius:2px;padding:14px;margin:0}
 .row{display:flex;gap:8px}
@@ -136,8 +136,47 @@ main{padding-bottom:110px}
 .sty{grid-column:1/-1}
 .sty h3{font:400 clamp(24px,5vw,30px)/1.1 var(--serif);margin:18px 0 4px}
 .sty .sb{margin:0 0 14px;color:var(--mute);font:italic 400 16px/1.3 var(--serif)}
-.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+/* SIDE-SCROLLING ROWS: each style group (and the saved outfits list) is a row you swipe sideways; cards snap into place */
+.sgrid,#savedOut,#customOut{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding-bottom:12px;scrollbar-width:thin}
+.sgrid .out,#savedOut .out,#customOut .out{flex:0 0 min(300px,82%);scroll-snap-align:start}
+.sty .hx{display:block;margin:-8px 0 10px;font:500 10px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
 .badge{font:500 9.5px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--acc);margin-bottom:10px}
+/* CUSTOM OUTFIT BUILDER: picker rows with selectable photos, and the outfit title / button row on custom cards */
+.pk{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
+.pk .p{flex:0 0 88px;width:88px;min-width:0;position:relative;cursor:pointer;border:2px solid transparent;border-radius:4px;padding:2px}
+.pk .p img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:2px}
+.pk .p span{display:block;font-size:10px;color:var(--mute);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk .p.on{border-color:var(--acc)}
+.pk .p.on::after{content:"✓";position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;background:var(--acc);color:var(--accink);font-size:11px;line-height:18px;text-align:center}
+.ctt{font:400 28px/1.1 var(--serif);margin:0 0 4px}
+.ctitle{font:400 24px/1.1 var(--serif);margin-bottom:10px}
+.cbtns{display:flex;gap:8px}
+.btn:disabled{opacity:.4;cursor:default}
+/* SCROLLING ON PHONE AND PC: phones swipe (rows snap and never trigger the browser's back swipe); PCs get arrow buttons, click-and-drag, a visible scrollbar and arrow-key scrolling when a row is focused */
+.sgrid,#savedOut,#customOut,.pk,.chips{overscroll-behavior-x:contain}
+.sgrid img,#savedOut img,#customOut img,.pk img{-webkit-user-drag:none;user-select:none}
+.rowwrap{position:relative}
+.arr{display:none;position:absolute;top:38%;z-index:3;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.14);transition:opacity .2s,background .2s;opacity:0}
+.arr.l{left:-6px}.arr.r{right:-6px}
+.arr:hover{background:var(--ink);color:var(--bg)}
+.arr.off{opacity:0!important;pointer-events:none}
+.rowwrap:hover .arr,.rowwrap.scrolling .arr,.arr:focus-visible{opacity:1}
+.sgrid:focus-visible,#savedOut:focus-visible,#customOut:focus-visible,.pk:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.msu{display:none}
+@media (hover:hover) and (pointer:fine){
+ .arr{display:flex}
+ .sgrid,#savedOut,#customOut,.pk,.chips{cursor:grab}
+ .grabbing{cursor:grabbing!important;scroll-snap-type:none!important;user-select:none}
+ .tch{display:none}.msu{display:inline}
+}
+/* HIDDEN SCROLLBARS AND ARROWS: scroll bars and arrow buttons stay invisible until you scroll or point at a row */
+.sgrid,#savedOut,#customOut,.pk,.chips{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.sgrid:hover,#savedOut:hover,#customOut:hover,.pk:hover,.chips:hover,.scrolling{scrollbar-color:var(--mute) transparent}
+@supports not (scrollbar-color:auto){
+ .sgrid::-webkit-scrollbar,#savedOut::-webkit-scrollbar,#customOut::-webkit-scrollbar,.pk::-webkit-scrollbar,.chips::-webkit-scrollbar{height:6px;display:block}
+ .sgrid::-webkit-scrollbar-thumb,#savedOut::-webkit-scrollbar-thumb,#customOut::-webkit-scrollbar-thumb,.pk::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb{background:transparent;border-radius:99px}
+ .sgrid:hover::-webkit-scrollbar-thumb,#savedOut:hover::-webkit-scrollbar-thumb,#customOut:hover::-webkit-scrollbar-thumb,.pk:hover::-webkit-scrollbar-thumb,.chips:hover::-webkit-scrollbar-thumb,.scrolling::-webkit-scrollbar-thumb{background:var(--mute)}
+}
 </style>
 </head>
 <!-- PAGE CONTENT: the visible app. It has three tabs (Closet, Outfits, Account), a bottom navigation bar and the editor popup -->
@@ -172,8 +211,11 @@ main{padding-bottom:110px}
   <div class="flt"><p class="lb">Weather</p><div class="chips" id="wxChips"></div></div>
   <div class="flt"><p class="lb">Build around</p><select id="focus" aria-label="Build outfits around a piece"></select></div>
   <label class="opt"><input type="checkbox" id="useOuter" checked> Include outerwear when available</label>
+  <!-- MY OUTFITS: your own outfits. The button opens the builder popup below -->
+  <button class="btn pri" id="cNew" style="margin-top:18px;max-width:340px;width:100%;flex:none">＋ Create your own outfit</button>
+  <div id="customWrap" hidden><h2><span class="n">&#9998;</span>My outfits <span id="customCount"></span></h2><div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div id="customOut" tabindex="0"></div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div></div>
   <!-- SAVED OUTFITS: outfits you starred with the Save button, shown above the suggestions -->
-  <div id="savedWrap" hidden><h2><span class="n">&#9733;</span>Saved outfits <span id="savedCount"></span></h2><div id="savedOut"></div></div>
+  <div id="savedWrap" hidden><h2><span class="n">&#9733;</span>Saved outfits <span id="savedCount"></span></h2><div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div id="savedOut" tabindex="0"></div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div></div>
   <h2 id="sugHead" hidden><span class="n">&#10022;</span>Suggestions</h2>
   <div id="outfits" style="margin-top:20px"></div>
  </div>
@@ -198,6 +240,14 @@ main{padding-bottom:110px}
  <button data-tab="outfits"><svg viewBox="0 0 24 24"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg>Outfits</button>
  <button data-tab="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>Account</button>
 </nav>
+<!-- OUTFIT BUILDER POPUP: name your outfit and tap pieces from each category to add or remove them -->
+<div class="sheet" id="csheet"><div class="panel">
+<h3 class="ctt" id="cTitle">Create your outfit</h3>
+<label>Name (optional)</label><input type="text" id="cName" maxlength="40" placeholder="e.g. Friday night fit">
+<div id="cPick"></div>
+<div class="st" id="cInfo"></div>
+<div class="btns"><button class="btn" id="cCancel">Cancel</button><button class="btn pri" id="cSave">Save outfit</button></div>
+</div></div>
 <!-- EDITOR POPUP: opens when you tap a piece. Lets you change color, name, brand (shoes), type, category, occasions, weather and the statement tag -->
 <div class="sheet" id="sheet"><div class="panel">
 <canvas id="pc"></canvas><div class="tag" style="text-align:center;margin-top:6px">Tap the photo to pick its color</div>
@@ -238,6 +288,11 @@ function save(){try{localStorage.setItem(keyFor(email),JSON.stringify(items))}ca
 // SAVED OUTFITS: each saved outfit is a list of piece IDs, stored in the browser per email (separately from the wardrobe, so old saved wardrobes still load)
 function loadSaved(m){try{const a=JSON.parse(localStorage.getItem(keySaved(m))||"[]");return Array.isArray(a)?a.filter(x=>Array.isArray(x)&&x.length).map(x=>x.map(String)):[]}catch(e){return[]}}
 let saved=loadSaved(email);
+// CUSTOM OUTFITS storage: a list of {n: name, ids: piece IDs}, saved per email like the wardrobe
+const keyCustom=m=>m?"om_custom:"+m.toLowerCase():"om_custom";
+function loadCustom(m){try{const a=JSON.parse(localStorage.getItem(keyCustom(m))||"[]");return Array.isArray(a)?a.filter(c=>c&&Array.isArray(c.ids)&&c.ids.length).map(c=>({n:String(c.n||"My outfit").slice(0,40),ids:c.ids.map(String)})):[]}catch(e){return[]}}
+let custom=loadCustom(email);
+function saveCustom(){try{localStorage.setItem(keyCustom(email),JSON.stringify(custom))}catch(e){}}
 function saveSaved(){try{localStorage.setItem(keySaved(email),JSON.stringify(saved))}catch(e){}}
 const skey=ids=>[...ids].map(String).sort().join(",");
 const isSaved=ids=>saved.some(x=>skey(x)===skey(ids));
@@ -353,7 +408,7 @@ function wxTags(it){if(it.wx&&it.wx.length)return it.wx;const t=(it.type||"").to
 function wxOK(it,w){return !w||wxTags(it).includes(w)}
 const okF=it=>(!occF||tagsOf(it).includes(occF))&&wxOK(it,wxF);
 // TABS: shows the chosen tab and highlights its button
-function setTab(t){tab=t;document.querySelectorAll(".tab").forEach(x=>x.hidden=x.dataset.t!==t);document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));window.scrollTo(0,0)}
+function setTab(t){tab=t;document.querySelectorAll(".tab").forEach(x=>x.hidden=x.dataset.t!==t);document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));window.scrollTo(0,0);syncArrows()}
 // CLICK HANDLER: one listener for the tab buttons, the filter chips and the editor chips
 document.addEventListener("click",e=>{
  const n=e.target.closest("[data-tab]");if(n)setTab(n.dataset.tab);
@@ -500,7 +555,7 @@ function buildStyles(){
   const calm=list.filter(x=>x.parts.filter(p=>p.statement).length<2);
   list=(calm.length?calm:list).sort((a,b)=>b.rank-a.rank);
   // Pick varied outfits: every outfit gets a different top and bottom, and pieces already used (in this style or an earlier one) are slightly penalised so shoes and outerwear rotate too
-  const N=styleF?6:3,chosen=[],uT=new Set(),uB=new Set(),pairs=new Set(),loc=new Map();
+  const N=styleF?12:8,chosen=[],uT=new Set(),uB=new Set(),pairs=new Set(),loc=new Map();
   const cnt=id=>(loc.get(id)||0)*.03+(used.get(id)||0)*.02;
   while(chosen.length<N){let best=null,bv=-9;
    for(const x of list){if(chosen.includes(x))continue;const t=x.parts[0].id,b=x.parts[1].id;if(uT.has(t)||uB.has(b))continue;
@@ -535,12 +590,14 @@ function render(){
  const hasBase=items.some(i=>i.cat==="dress")||(items.some(i=>i.cat==="top")&&items.some(i=>i.cat==="bottom"));
  // Saved outfits: look up each saved list of piece IDs; skip any whose pieces were deleted
  const sp=saved.map(ids=>ids.map(id=>items.find(i=>String(i.id)===id))).filter(ps=>ps.length&&ps.every(Boolean));
+ const cp=custom.map((c,i)=>({c,i,ps:c.ids.map(id=>items.find(t=>String(t.id)===id)).filter(Boolean)})).filter(x=>x.ps.length>=2);
+ $("customOut").innerHTML=cp.map(ccard).join("");$("customWrap").hidden=!cp.length;$("customCount").textContent=cp.length?`(${cp.length})`:"";
  $("savedOut").innerHTML=sp.map(ps=>card(ps,scoreParts(ps))).join("");
  $("savedWrap").hidden=!sp.length;$("sugHead").hidden=!sp.length;
  $("savedCount").textContent=sp.length?`(${sp.length})`:"";
  $("sugHead").innerHTML='<span class="n">&#10022;</span>'+(mode==="style"?"Inspired outfits":"Suggestions");
  const noRes=`<div class="empty">${(occF||wxF)?"No outfits fit these filters yet — try Any, or add more pieces.":focusId?"Nothing to pair with this piece yet — add more pieces from other categories.":hasBase?"Add shoes or outerwear options to see more combos.":"Add at least one top and one bottom (or a dress) to see outfits."}</div>`;
- if(mode==="style")$("outfits").innerHTML=groups.length?groups.map(g=>`<div class="sty"><h3>${esc(g.name)}</h3><p class="sb">${esc(g.blurb)}</p><div class="sgrid">${g.list.map(x=>card(x.parts,x.sc,g.name)).join("")}</div></div>`).join(""):(items.length?`<div class="empty">No style outfits yet — add more tops, bottoms and shoes, or clear the filters.</div>`:noRes);
+ if(mode==="style")$("outfits").innerHTML=groups.length?groups.map(g=>`<div class="sty"><h3>${esc(g.name)}</h3><p class="sb">${esc(g.blurb)}</p>${g.list.length>1?`<span class="hx">${g.list.length} outfits · <span class="tch">swipe →</span><span class="msu">drag or use the arrows →</span></span>`:""}<div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div class="sgrid" tabindex="0">${g.list.map(x=>card(x.parts,x.sc,g.name)).join("")}</div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div></div>`).join(""):(items.length?`<div class="empty">No style outfits yet — add more tops, bottoms and shoes, or clear the filters.</div>`:noRes);
  else $("outfits").innerHTML=o.length?o.map(x=>card(x.parts,x.sc)).join("")
   :`<div class="empty">${(occF||wxF)?"No outfits fit these filters yet — try Any, or add more pieces.":focusId?"Nothing to pair with this piece yet — add more pieces from other categories.":hasBase?"Add shoes or outerwear options to see more combos.":"Add at least one top and one bottom (or a dress) to see outfits."}</div>`}
 // OUTFIT CARD: photos, reason, match score, color strip, layering note, graphic-tee warning and the Save / Saved button
@@ -557,6 +614,34 @@ function card(parts,sc,sty){
   <button class="sv${sv?" on":""}" data-sv="${ids.join(",")}">${sv?"★ Saved":"☆ Save"}</button></div>`}
 
 
+// CUSTOM OUTFITS: build your own outfit by tapping pieces from your wardrobe, give it a name, and keep it in "My outfits"
+let cEdit=null,cSel=new Set();
+function togglePick(id){id=String(id);if(cSel.has(id))cSel.delete(id);else cSel.add(id);renderPick()}
+function openBuilder(idx){cEdit=idx;cSel=new Set(idx!=null?custom[idx].ids:[]);$("cName").value=idx!=null?custom[idx].n:"";$("cTitle").textContent=idx!=null?"Edit outfit":"Create your outfit";renderPick();$("csheet").classList.add("on");$("csheet").querySelector(".panel").scrollTop=0}
+function closeBuilder(){$("csheet").classList.remove("on");cEdit=null}
+// Draws the pickers (one scrolling row per category) and the live preview line
+function renderPick(){
+ $("cPick").innerHTML=items.length?CATS.map(([k,l])=>{const g=items.filter(i=>i.cat===k);return g.length?`<label>${l}</label><div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div class="pk" tabindex="0">${g.map(i=>`<div class="p${cSel.has(String(i.id))?" on":""}" data-cp="${i.id}"><img src="${i.thumb}" alt=""><span>${esc(title(i))}</span></div>`).join("")}</div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div>`:""}).join(""):'<div class="empty">Add some clothes in the Closet tab first.</div>';
+ const ps=items.filter(i=>cSel.has(String(i.id)));
+ $("cInfo").textContent=ps.length>=2?ps.length+" pieces · "+Math.round(scoreParts(ps)*100)+"% color match · "+reason(ps):ps.length?"Pick at least one more piece.":"Tap pieces to add them to your outfit.";
+ $("cSave").disabled=ps.length<2}
+function saveBuilder(){
+ const ids=items.filter(i=>cSel.has(String(i.id))).map(i=>String(i.id));if(ids.length<2)return;
+ const n=($("cName").value.trim()||"My outfit "+(custom.length+1)).slice(0,40);
+ if(cEdit!=null&&custom[cEdit])custom[cEdit]={n,ids};else custom.push({n,ids});
+ saveCustom();closeBuilder();render()}
+// CUSTOM OUTFIT CARD: your name for it, photos, color-match score, and Edit / Delete buttons
+function ccard(x){const ps=x.ps,sc=scoreParts(ps),st=styleOf(ps);
+ return `
+  <div class="out"><div class="ctitle">${esc(x.c.n)}</div>${st?`<div class="badge">✦ ${esc(st)}</div>`:""}<div class="row">${ps.map(p=>`<figure><img src="${p.thumb}" alt=""><figcaption>${p.statement?"★ ":""}${esc(title(p))}</figcaption></figure>`).join("")}</div>
+  <div class="hd"><span class="why">${reason(ps)}</span><span class="score">${Math.round(sc*100)}% match</span></div>
+  <div class="pal">${ps.map(p=>`<i style="background:${hsl(p)}"></i>`).join("")}</div>
+  <div class="cbtns"><button class="sv" data-cedit="${x.i}">Edit</button><button class="sv" data-cdel="${x.i}">Delete</button></div></div>`}
+$("cNew").onclick=()=>openBuilder(null);
+$("cCancel").onclick=closeBuilder;
+$("cSave").onclick=saveBuilder;
+$("csheet").onclick=e=>{if(e.target.id==="csheet")closeBuilder()};
+
 // BUTTON WIRING: connects the page buttons and inputs to the functions above
 $("addBtn").onclick=()=>$("file").click();
 $("file").onchange=e=>{handleFiles(e.target.files);e.target.value=""};
@@ -564,7 +649,10 @@ $("useOuter").onchange=render;
 document.addEventListener("click",e=>{
  const c=e.target.closest("[data-c]");if(c){cur=c.dataset.c;render()}
  const x=e.target.closest("[data-x]");if(x){items=items.filter(i=>String(i.id)!==x.dataset.x);save();render()}
- const sv=e.target.closest("[data-sv]");if(sv)toggleSaved(sv.dataset.sv.split(","))});
+ const sv=e.target.closest("[data-sv]");if(sv)toggleSaved(sv.dataset.sv.split(","))
+ const cpk=e.target.closest("[data-cp]");if(cpk)togglePick(cpk.dataset.cp);
+ const ce=e.target.closest("[data-cedit]");if(ce)openBuilder(+ce.dataset.cedit);
+ const cd=e.target.closest("[data-cdel]");if(cd&&confirm("Delete this outfit?")){custom.splice(+cd.dataset.cdel,1);saveCustom();render()}});
 document.addEventListener("change",e=>{
  const s=e.target.closest("[data-s]");if(s){const it=items.find(i=>String(i.id)===s.dataset.s);if(it){it.cat=s.value;save();render()}}});
 // HELPERS: escape text for safe display, and work out the name to show for a piece (custom name, brand + type, or color + category)
@@ -620,13 +708,14 @@ $("eCat").addEventListener("change",fillTypes);$("eCat").addEventListener("chang
 const _oe=openEdit;openEdit=function(id){_oe(id);fillTypes()};
 // BACKUP: export the wardrobe to a file, or import one (new pieces are added, duplicates skipped)
 // Backup file format: the wardrobe pieces plus the saved outfits (old backups that are just a list of pieces still import)
-const pack=()=>JSON.stringify({app:"outfit-matcher",v:2,items,saved});
+const pack=()=>JSON.stringify({app:"outfit-matcher",v:2,items,saved,custom});
 $("exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([pack()],{type:"application/json"}));a.download="wardrobe-backup.json";document.body.appendChild(a);a.click();a.remove()};
 $("imp").onclick=()=>$("impf").click();
 $("impf").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);const arr=Array.isArray(d)?d:d&&d.items;if(!Array.isArray(arr))throw 0;
  const ids=new Set(items.map(i=>String(i.id)));arr.forEach(i=>{if(i&&i.thumb&&!ids.has(String(i.id)))items.push(i)});
  let m=0;if(d&&!Array.isArray(d)&&Array.isArray(d.saved)){const have=new Set(saved.map(skey));d.saved.forEach(x=>{if(Array.isArray(x)&&x.length&&!have.has(skey(x))){saved.push(x.map(String));have.add(skey(x));m++}})}
- save();saveSaved();render();$("bk").textContent="Imported "+arr.length+" items"+(m?" and "+m+" saved outfit"+(m>1?"s":""):"")+"."}catch(x){$("bk").textContent="That file isn't a valid wardrobe backup."}};r.readAsText(f)};
+ let mc=0;if(d&&!Array.isArray(d)&&Array.isArray(d.custom)){const hv=new Set(custom.map(c=>c.n+"|"+skey(c.ids)));d.custom.forEach(c=>{if(c&&Array.isArray(c.ids)&&c.ids.length){const k=String(c.n||"My outfit")+"|"+skey(c.ids);if(!hv.has(k)){custom.push({n:String(c.n||"My outfit").slice(0,40),ids:c.ids.map(String)});hv.add(k);mc++}}})}
+ saveCustom();save();saveSaved();render();$("bk").textContent="Imported "+arr.length+" items"+(m?" and "+m+" saved outfit"+(m>1?"s":""):"")+(mc?", "+mc+" custom outfit"+(mc>1?"s":""):"")+"."}catch(x){$("bk").textContent="That file isn't a valid wardrobe backup."}};r.readAsText(f)};
 
 // EMAIL ACCOUNT: save your email on this device and email yourself a backup (share sheet on phones, mail app on computers)
 $("email").value=email;
@@ -635,8 +724,8 @@ $("emSave").onclick=()=>{const m=$("email").value.trim();
  if(!okMail(m)){emMsg("Enter a valid email address.",1);return}
  let had=null;try{had=localStorage.getItem(keyFor(m))}catch(e){}
  const cur=items;email=m;try{localStorage.setItem("om_email",m)}catch(e){}
- if(had){saved=loadSaved(m);try{items=JSON.parse(had)}catch(e){items=cur}emMsg("Welcome back — loaded the wardrobe saved under "+m+".")}
- else{items=cur;save();saveSaved();emMsg("Saved. Your wardrobe is now tied to "+m+".")}
+ if(had){saved=loadSaved(m);custom=loadCustom(m);try{items=JSON.parse(had)}catch(e){items=cur}emMsg("Welcome back — loaded the wardrobe saved under "+m+".")}
+ else{items=cur;save();saveSaved();saveCustom();emMsg("Saved. Your wardrobe is now tied to "+m+".")}
  render()};
 $("mail").onclick=async()=>{
  const m=($("email").value||email).trim();
@@ -650,6 +739,22 @@ $("mail").onclick=async()=>{
  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
  emMsg("Your mail app is opening with a message to "+m+". Attach the downloaded wardrobe-backup.json file, then send.");
  setTimeout(()=>{location.href="mailto:"+encodeURIComponent(m).replace("%40","@")+"?subject="+encodeURIComponent("My Outfit Matcher wardrobe")+"&body="+encodeURIComponent(body)},400)};
+// SCROLLING HELP FOR PC: mouse users can drag a row sideways or use its arrow buttons (phones just swipe). Taps right after a drag are ignored so dragging never opens a card by accident
+const ROWS=".sgrid,#savedOut,#customOut,.pk,.chips";
+let drag=null,dragged=false;
+document.addEventListener("pointerdown",e=>{if(e.pointerType!=="mouse"||e.button!==0)return;const r=e.target.closest(ROWS);if(!r||r.scrollWidth<=r.clientWidth)return;drag={r,x:e.clientX,l:r.scrollLeft};dragged=false});
+window.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x;if(!dragged&&Math.abs(dx)>5){dragged=true;drag.r.classList.add("grabbing")}if(dragged)drag.r.scrollLeft=drag.l-dx});
+window.addEventListener("pointerup",()=>{if(drag){drag.r.classList.remove("grabbing");drag=null;setTimeout(()=>{dragged=false},60)}});
+document.addEventListener("click",e=>{if(dragged){e.stopPropagation();e.preventDefault();dragged=false}},true);
+document.addEventListener("dragstart",e=>{if(e.target.closest&&e.target.closest(ROWS))e.preventDefault()});
+// Arrow buttons scroll their row by most of its width
+document.addEventListener("click",e=>{const a=e.target.closest("[data-arr]");if(!a)return;const sc=a.parentElement.querySelector(ROWS);if(sc)sc.scrollBy({left:+a.dataset.arr*Math.max(240,sc.clientWidth*.85),behavior:"smooth"})});
+// Hide an arrow when its row is already at that end
+function syncArrows(){document.querySelectorAll(".rowwrap").forEach(w=>{const sc=w.querySelector(ROWS);if(!sc)return;const l=w.querySelector(".arr.l"),r=w.querySelector(".arr.r");if(!l||!r)return;const more=sc.scrollWidth>sc.clientWidth+4;l.classList.toggle("off",!more||sc.scrollLeft<4);r.classList.toggle("off",!more||sc.scrollLeft+sc.clientWidth>=sc.scrollWidth-4)})}
+// While a row is scrolling, add a "scrolling" class (shows its scrollbar and arrows) and remove it a moment after it stops
+document.addEventListener("scroll",e=>{const t=e.target;if(t&&t.matches&&t.matches(ROWS)){const w=t.parentElement&&t.parentElement.classList.contains("rowwrap")?t.parentElement:null;t.classList.add("scrolling");if(w)w.classList.add("scrolling");clearTimeout(t._st);t._st=setTimeout(()=>{t.classList.remove("scrolling");if(w)w.classList.remove("scrolling")},900)}syncArrows()},true);window.addEventListener("resize",syncArrows);
+const _render=render;render=function(){_render();syncArrows()};
+
 // START: draw the page for the first time, then (only inside Claude) check whether the optional AI Identify is available
 render();
 (async()=>{try{if(window.claude){sample=await claude.use("sample");if(sample)lim=await sample.limits()}}catch(e){sample=null}render()})();
