@@ -194,6 +194,17 @@ main{padding-bottom:110px}
 .pk.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));overflow:visible}
 .pk.grid .p{flex:none;width:auto}
 #csheet .btns{position:sticky;bottom:-1px;background:var(--bg);padding:12px 0 2px;border-top:1px solid var(--line)}
+/* COLOR FILTER swatches and the builder's layer list */
+.chip .dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid rgba(128,128,128,.55);background:var(--c);margin-right:8px;vertical-align:-1px}
+.chip .ct{opacity:.55;margin-left:4px;font-size:10px}
+.cfrow input[type=color]{width:46px;height:38px;border:1px solid var(--line);border-radius:2px;background:none;padding:2px}
+.lrow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--card);margin-bottom:6px}
+.lrow img{width:42px;height:52px;object-fit:cover;border-radius:2px;flex:none}
+.lrow .lt{flex:1;min-width:0}
+.lrow .lt b{display:block;font:500 15px/1.2 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow select{width:auto;padding:8px;font-size:14px}
+.mv{flex:none;width:30px;height:30px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:2px;cursor:pointer;font-size:11px}
+.mv:disabled{opacity:.3;cursor:default}
 </style>
 </head>
 <!-- PAGE CONTENT: the visible app. It has three tabs (Closet, Outfits, Account), a bottom navigation bar and the editor popup -->
@@ -260,6 +271,8 @@ main{padding-bottom:110px}
   <div class="flt" id="styleFlt"><p class="lb">Style</p><div class="chips" id="styleChips"></div></div>
   <div class="flt"><p class="lb">Occasion</p><div class="chips" id="occChips"></div></div>
   <div class="flt"><p class="lb">Weather</p><div class="chips" id="wxChips"></div></div>
+  <div class="flt" id="colFlt"><p class="lb">Color</p><div class="chips" id="colScope"></div><div class="chips" id="colSw" style="margin-top:8px"></div>
+  <div class="cfrow"><input type="color" id="colPick" value="#c0392b" aria-label="Pick an exact shade"><button type="button" class="chip" id="colAdd">+ Add this shade</button><button type="button" class="chip" id="colClr">Clear colors</button></div></div>
   <div class="flt"><p class="lb">Build around</p><select id="focus" aria-label="Build outfits around a piece"></select></div>
   <label class="chk"><input type="checkbox" id="useOuter" checked> Include outerwear when available</label>
 <div class="btns"><button class="btn" id="fReset">Reset</button><button class="btn pri" id="fDone">Show outfits</button></div>
@@ -270,8 +283,11 @@ main{padding-bottom:110px}
 <label>Name (optional)</label><input type="text" id="cName" maxlength="40" placeholder="e.g. Friday night fit">
 <label>Find pieces</label><input type="search" id="cQ" placeholder="Search by name, type, color or brand">
 <div class="chips" id="cCats" style="margin-top:10px"></div>
+<div class="chips" id="cCols" style="margin-top:10px"></div>
 <div class="cfrow"><select id="cSort" aria-label="Sort pieces"></select><button type="button" class="chip" id="cStm">★ Statement</button><button type="button" class="chip" id="cSelOnly">Selected</button></div>
 <div id="cPick"></div>
+<!-- LAYERS: choose each piece's layer and set the order pieces appear on your outfit card -->
+<div id="cLayWrap" hidden><label>Order &amp; layers</label><div class="hint" style="margin:0 0 8px">Set each piece's layer (base, mid, outer) and move pieces up or down to change their order on your outfit.</div><div id="cLayers"></div><button type="button" class="chip" id="cAuto" style="margin-top:6px">Auto-order by layer</button></div>
 <div class="st" id="cInfo"></div>
 <div class="btns"><button class="btn" id="cCancel">Cancel</button><button class="btn pri" id="cSave">Save outfit</button></div>
 </div></div>
@@ -317,7 +333,7 @@ function loadSaved(m){try{const a=JSON.parse(localStorage.getItem(keySaved(m))||
 let saved=loadSaved(email);
 // CUSTOM OUTFITS storage: a list of {n: name, ids: piece IDs}, saved per email like the wardrobe
 const keyCustom=m=>m?"om_custom:"+m.toLowerCase():"om_custom";
-function loadCustom(m){try{const a=JSON.parse(localStorage.getItem(keyCustom(m))||"[]");return Array.isArray(a)?a.filter(c=>c&&Array.isArray(c.ids)&&c.ids.length).map(c=>({n:String(c.n||"My outfit").slice(0,40),ids:c.ids.map(String)})):[]}catch(e){return[]}}
+function loadCustom(m){try{const a=JSON.parse(localStorage.getItem(keyCustom(m))||"[]");return Array.isArray(a)?a.filter(c=>c&&Array.isArray(c.ids)&&c.ids.length).map(c=>({n:String(c.n||"My outfit").slice(0,40),ids:c.ids.map(String),ly:(c.ly&&typeof c.ly==="object")?c.ly:undefined})):[]}catch(e){return[]}}
 let custom=loadCustom(email);
 function saveCustom(){try{localStorage.setItem(keyCustom(email),JSON.stringify(custom))}catch(e){}}
 function saveSaved(){try{localStorage.setItem(keySaved(email),JSON.stringify(saved))}catch(e){}}
@@ -433,7 +449,7 @@ function wxTags(it){if(it.wx&&it.wx.length)return it.wx;const t=(it.type||"").to
  return["cold","mild","hot"]}
 // FILTER CHECK: does a piece pass the current occasion and weather filters?
 function wxOK(it,w){return !w||wxTags(it).includes(w)}
-const okF=it=>(!occF||tagsOf(it).includes(occF))&&wxOK(it,wxF);
+const okF=it=>(!occF||tagsOf(it).includes(occF))&&wxOK(it,wxF)&&colorOK(it);
 // TABS: shows the chosen tab and highlights its button
 function setTab(t){tab=t;document.querySelectorAll(".tab").forEach(x=>x.hidden=x.dataset.t!==t);document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));window.scrollTo(0,0);syncArrows()}
 // CLICK HANDLER: one listener for the tab buttons, the filter chips and the editor chips
@@ -474,7 +490,7 @@ function scoreParts(parts){
 // OUTFIT BUILDER: combines tops + bottoms (or dresses), optional outerwear and shoes, plus vest-under-layer combos; applies the filters, hides outfits with 2+ statement pieces (unless that would leave none), and keeps the best 12
 function build(){
  const fo=items.find(i=>String(i.id)===String(focusId));
- const poolOK=i=>okF(i)||(wxF==="cold"&&teeBase(i)&&(!occF||tagsOf(i).includes(occF)));
+ const poolOK=i=>okF(i)||(wxF==="cold"&&teeBase(i)&&(!occF||tagsOf(i).includes(occF))&&colorOK(i));
  const by=c=>items.filter(i=>i.cat===c&&poolOK(i)&&(!fo||fo.cat!==c||fo.id===i.id));
  const tops=by("top"),bots=by("bottom"),dr=by("dress"),out=by("outer"),sh=by("shoes");
  const useOut=((fo&&fo.cat==="outer")||(wxF==="cold"?true:$("useOuter").checked))&&out.length>0;
@@ -556,7 +572,7 @@ const styleFit=(st,it)=>clamp01(st.fit(it));
 // Does this piece list read as one of the styles? Returns the best style name, or "" (used for the badge on outfit cards)
 function styleOf(parts){let best="",bv=0;STYLES.forEach(st=>{const f=parts.map(p=>styleFit(st,p));if(f.some(x=>x<.5)||f.filter(x=>x>=.85).length<st.sig)return;const a=f.reduce((x,y)=>x+y,0)/f.length;if(a>bv){bv=a;best=st.name}});return best}
 // Is this piece allowed by the occasion / weather filters? (Cold also lets guessed-mild T-shirts through as base layers)
-function inPool(i){return okF(i)||(wxF==="cold"&&teeBase(i)&&(!occF||tagsOf(i).includes(occF)))}
+function inPool(i){return okF(i)||(wxF==="cold"&&teeBase(i)&&(!occF||tagsOf(i).includes(occF))&&colorOK(i))}
 // STYLE OUTFIT BUILDER: for each style, takes the best-fitting tops, bottoms, outerwear and shoes, scores every combination (style fit + color match), skips 2+ statement pieces when possible, and keeps a few varied outfits per style
 function buildStyles(){
  const fo=items.find(i=>String(i.id)===String(focusId));
@@ -610,6 +626,8 @@ function render(){
  if(wxF)P(WX.find(x=>x[0]===wxF)[1],"wx");
  const fi=items.find(i=>String(i.id)===String(focusId));if(fi)P("Around: "+title(fi),"focus");
  if(!$("useOuter").checked)P("No outerwear","outer");
+ [["all","Color"],...CATS].forEach(([k,l])=>{if(colorF[k].length)P((k==="all"?"Color: ":l+": ")+colorF[k].map(colLabel).join(", "),"col:"+k)});
+ renderColorUI();
  $("fSum").innerHTML=pills.join("");$("fBadge").textContent=pills.length-1;$("fBadge").hidden=pills.length<2;
  $("wxChips").innerHTML=[["","Any"],...WX].map(([k,l])=>`<button class="chip${k===wxF?" on":""}" data-wx="${k}">${l}</button>`).join("");
  $("count").textContent=items.length?`(${items.length})`:"";
@@ -649,45 +667,90 @@ function card(parts,sc,sty){
 
 
 // CUSTOM OUTFITS: build your own outfit by tapping pieces from your wardrobe, give it a name, and keep it in "My outfits"
-let cEdit=null,cSel=new Set(),cF="",cSort="new",cQ="",cStm=false,cSelOnly=false;
+let cEdit=null,cSel=new Set(),cOrder=[],cLayer={},cF="",cSort="new",cQ="",cStm=false,cSelOnly=false,cCol=[];
+// COLOR FILTER: colors are grouped into families (black, white, denim...). Pick families (or an exact shade) for all pieces or separately for tops, bottoms, dresses, outerwear and shoes
+const COLS=[["black","#111111"],["charcoal","#3a3a3a"],["grey","#8a8a8a"],["white","#f7f5f0"],["beige","#d8c3a5"],["brown","#6b4a2f"],["navy","#1f2a44"],["denim","#5b7da0"],["blue","#2f5fb3"],["teal","#2a8b8b"],["green","#3f7d4a"],["yellow","#e5c93a"],["orange","#e07b2f"],["red","#c0392b"],["pink","#e58aa8"],["purple","#7b4fa3"]];
+const colHex=Object.fromEntries(COLS);
+let colorF={all:[],top:[],bottom:[],dress:[],outer:[],shoes:[]},cScope="all";
+const famOf=it=>(it.name||"").replace(/^(light|dark) /,"");
+function hsl2rgb(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return 255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)))};return[f(0),f(8),f(4)]}
+// A filter entry is either a color family name or an exact shade like "#c0392b" (matches pieces whose color is close to it)
+function matchColor(it,e){if(e[0]==="#"){const c=hsl2rgb(it.h,it.s,it.l),t=[1,3,5].map(i=>parseInt(e.slice(i,i+2),16));return Math.hypot(c[0]-t[0],c[1]-t[1],c[2]-t[2])<55}return famOf(it)===e}
+// A piece passes when it matches the "all pieces" colors (if any) and the colors chosen for its own category (if any)
+function colorOK(it){const A=colorF.all,C=colorF[it.cat]||[];return(!A.length||A.some(e=>matchColor(it,e)))&&(!C.length||C.some(e=>matchColor(it,e)))}
+const colLabel=e=>e[0]==="#"?e.toUpperCase():e[0].toUpperCase()+e.slice(1);
+function colChip(e,count,on,attr){const hex=e[0]==="#"?e:(colHex[e]||"#999999");return `<button type="button" class="chip${on?" on":""}" ${attr}="${e}"><i class="dot" style="--c:${hex}"></i>${colLabel(e)}${count!=null?` <span class="ct">${count}</span>`:""}</button>`}
+// Which color families exist in your wardrobe (optionally for one category), with how many pieces each
+function colorsPresent(cat){const m=new Map();items.forEach(i=>{if(cat&&cat!=="all"&&i.cat!==cat)return;const f=famOf(i);m.set(f,(m.get(f)||0)+1)});return COLS.map(c=>c[0]).filter(f=>m.has(f)).map(f=>[f,m.get(f)]).concat([...m.entries()].filter(([f])=>!colHex[f]))}
+// Draws the Color section of the Filters panel: which pieces to apply it to, then the color swatches
+function renderColorUI(){
+ $("colScope").innerHTML=[["all","All pieces"],...CATS].map(([k,l])=>{const n=colorF[k].length;return `<button type="button" class="chip${k===cScope?" on":""}" data-cscope="${k}">${l}${n?` <span class="ct">${n}</span>`:""}</button>`}).join("");
+ const sel=colorF[cScope],pres=colorsPresent(cScope);
+ $("colSw").innerHTML=(pres.map(([f,n])=>colChip(f,n,sel.includes(f),"data-colf")).join("")+sel.filter(e=>e[0]==="#").map(e=>colChip(e,null,true,"data-colf")).join(""))||'<span class="tag">No pieces in this category yet.</span>'}
 // Sort choices for the outfit builder's piece pickers
 const SORTS=[["new","Recently added"],["old","Oldest first"],["az","A → Z"],["za","Z → A"],["color","Color"],["stm","Statement first"]];
 function sortPieces(a){const n=i=>Number(i.id)||0,t=i=>title(i).toLowerCase();
  const f={new:(x,y)=>n(y)-n(x),old:(x,y)=>n(x)-n(y),az:(x,y)=>t(x).localeCompare(t(y)),za:(x,y)=>t(y).localeCompare(t(x)),color:(x,y)=>(Number(x.neutral)-Number(y.neutral))||((x.neutral?x.l:x.h)-(y.neutral?y.l:y.h)),stm:(x,y)=>(Number(!!y.statement)-Number(!!x.statement))||n(y)-n(x)}[cSort];
  return a.slice().sort(f)}
-// Tapping a piece just flips its check mark (so the row does not jump back to the start); the "Selected" filter needs a full redraw
-function togglePick(id){id=String(id);if(cSel.has(id))cSel.delete(id);else cSel.add(id);if(cSelOnly)renderPick();else{document.querySelectorAll('#cPick [data-cp="'+id+'"]').forEach(e=>e.classList.toggle("on",cSel.has(id)));cInfoUpdate()}}
-function openBuilder(idx){cEdit=idx;cSel=new Set(idx!=null?custom[idx].ids:[]);cF="";cSort="new";cQ="";cStm=false;cSelOnly=false;$("cQ").value="";$("cSort").value="new";$("cName").value=idx!=null?custom[idx].n:"";$("cTitle").textContent=idx!=null?"Edit outfit":"Create your outfit";renderPick();$("csheet").classList.add("on");$("csheet").querySelector(".panel").scrollTop=0}
+const pieceById=id=>items.find(i=>String(i.id)===id);
+// LAYERS: every top, dress or outerwear piece has a layer (base, mid, outer). Defaults: vests are mid, other outerwear is outer, everything else is base
+const LAYERS=[["base","Base"],["mid","Mid"],["outer","Outer"]];
+const defLayer=it=>it.cat==="outer"?(isVest(it)?"mid":"outer"):"base";
+const canLayer=it=>it.cat==="top"||it.cat==="dress"||it.cat==="outer";
+// Tapping a piece adds it to (or removes it from) your outfit; the row is not redrawn so it keeps its scroll position
+function togglePick(id){id=String(id);
+ if(cSel.has(id)){cSel.delete(id);cOrder=cOrder.filter(x=>x!==id);delete cLayer[id]}else{cSel.add(id);cOrder.push(id)}
+ if(cSelOnly)renderPick();else{document.querySelectorAll('#cPick [data-cp="'+id+'"]').forEach(e=>e.classList.toggle("on",cSel.has(id)));cInfoUpdate()}}
+function openBuilder(idx){const ex=idx!=null?custom[idx]:null;
+ cEdit=idx;cOrder=ex?ex.ids.filter(id=>pieceById(id)):[];cSel=new Set(cOrder);cLayer=ex&&ex.ly?Object.assign({},ex.ly):{};
+ cF="";cSort="new";cQ="";cStm=false;cSelOnly=false;cCol=[];$("cQ").value="";$("cSort").value="new";
+ $("cName").value=ex?ex.n:"";$("cTitle").textContent=ex?"Edit outfit":"Create your outfit";
+ renderPick();$("csheet").classList.add("on");$("csheet").querySelector(".panel").scrollTop=0}
 function closeBuilder(){$("csheet").classList.remove("on");cEdit=null}
-// The live preview line and the Save button state
-function cInfoUpdate(){const ps=items.filter(i=>cSel.has(String(i.id)));
+// Layer list: your picked pieces in outfit order, each with a layer choice and up / down buttons
+function renderLayers(){
+ const ps=cOrder.map(pieceById).filter(Boolean);
+ $("cLayWrap").hidden=!ps.length;
+ $("cLayers").innerHTML=ps.map((p,n)=>{const id=String(p.id);
+  const ctl=canLayer(p)?`<select data-lsel="${id}" aria-label="Layer">${LAYERS.map(([k,l])=>`<option value="${k}"${(cLayer[id]||defLayer(p))===k?" selected":""}>${l} layer</option>`).join("")}</select>`:`<span class="tag">${p.cat==="shoes"?"Shoes":"Bottom"}</span>`;
+  return `<div class="lrow"><img src="${p.thumb}" alt=""><div class="lt"><b>${esc(title(p))}</b><span class="tag">${LBL[p.cat]}</span></div>${ctl}<button type="button" class="mv" data-lmv="${n}|-1" aria-label="Move earlier"${n?"":" disabled"}>▲</button><button type="button" class="mv" data-lmv="${n}|1" aria-label="Move later"${n<ps.length-1?"":" disabled"}>▼</button></div>`}).join("")}
+// Auto-order: bottoms first, then layers from base to outer, shoes last
+function autoOrder(){const lay=p=>canLayer(p)?(cLayer[String(p.id)]||defLayer(p)):"";const r=p=>p.cat==="shoes"?9:p.cat==="bottom"?1:({base:0,mid:2,outer:3})[lay(p)];
+ cOrder=cOrder.map(pieceById).filter(Boolean).map((p,i)=>[p,i]).sort((a,b)=>r(a[0])-r(b[0])||a[1]-b[1]).map(x=>String(x[0].id));renderLayers()}
+// The live preview line, the layer list and the Save button state
+function cInfoUpdate(){const ps=cOrder.map(pieceById).filter(Boolean);
  $("cInfo").textContent=ps.length>=2?ps.length+" pieces · "+Math.round(scoreParts(ps)*100)+"% color match · "+reason(ps):ps.length?"Pick at least one more piece.":"Tap pieces to add them to your outfit.";
- $("cSave").disabled=ps.length<2}
-// Draws the builder: category chips, the sort / statement / selected controls, and one row (or a wrapping grid when filtering) per category
+ $("cSave").disabled=ps.length<2;renderLayers()}
+// Draws the builder: category and color chips, the sort / statement / selected controls, and one row (or a wrapping grid when filtering) per category
 function renderPick(){
  $("cCats").innerHTML=[["","All"],...CATS].map(([k,l])=>`<button class="chip${k===cF?" on":""}" data-cf="${k}">${l}</button>`).join("");
+ $("cCols").innerHTML=colorsPresent("all").map(([f,n])=>colChip(f,n,cCol.includes(f),"data-bcol")).join("");
  $("cStm").classList.toggle("on",cStm);$("cSelOnly").classList.toggle("on",cSelOnly);
- const q=cQ.trim().toLowerCase(),filtered=!!(cF||q||cStm||cSelOnly);
+ const q=cQ.trim().toLowerCase(),filtered=!!(cF||q||cStm||cSelOnly||cCol.length);
  const hay=i=>[title(i),i.type,i.label,i.brand,i.name,LBL[i.cat]].join(" ").toLowerCase();
  let html="";
  CATS.forEach(([k,l])=>{
-  const g=sortPieces(items.filter(i=>i.cat===k&&(!cF||cF===k)&&(!q||hay(i).includes(q))&&(!cStm||i.statement)&&(!cSelOnly||cSel.has(String(i.id)))));
+  const g=sortPieces(items.filter(i=>i.cat===k&&(!cF||cF===k)&&(!q||hay(i).includes(q))&&(!cStm||i.statement)&&(!cSelOnly||cSel.has(String(i.id)))&&(!cCol.length||cCol.some(e=>matchColor(i,e)))));
   if(!g.length)return;
   const cells=g.map(i=>`<div class="p${cSel.has(String(i.id))?" on":""}" data-cp="${i.id}"><img src="${i.thumb}" alt=""><span>${esc(title(i))}</span></div>`).join("");
   html+=`<label>${l} <span class="tag">(${g.length})</span></label>`+(filtered?`<div class="pk grid">${cells}</div>`:`<div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div class="pk" tabindex="0">${cells}</div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div>`)});
  $("cPick").innerHTML=items.length?(html||'<div class="empty">No pieces match these filters.</div>'):'<div class="empty">Add some clothes in the Closet tab first.</div>';
  cInfoUpdate();syncArrows()}
 function saveBuilder(){
- const ids=items.filter(i=>cSel.has(String(i.id))).map(i=>String(i.id));if(ids.length<2)return;
- const n=($("cName").value.trim()||"My outfit "+(custom.length+1)).slice(0,40);
- if(cEdit!=null&&custom[cEdit])custom[cEdit]={n,ids};else custom.push({n,ids});
+ const ids=cOrder.filter(id=>cSel.has(id)&&pieceById(id));if(ids.length<2)return;
+ const ly={};ids.forEach(id=>{const p=pieceById(id);if(canLayer(p)&&cLayer[id]&&cLayer[id]!==defLayer(p))ly[id]=cLayer[id]});
+ const n=($("cName").value.trim()||"My outfit "+(custom.length+1)).slice(0,40),o={n,ids};if(Object.keys(ly).length)o.ly=ly;
+ if(cEdit!=null&&custom[cEdit])custom[cEdit]=o;else custom.push(o);
  saveCustom();closeBuilder();render()}
-// CUSTOM OUTFIT CARD: your name for it, photos, color-match score, and Edit / Delete buttons
-function ccard(x){const ps=x.ps,sc=scoreParts(ps),st=styleOf(ps);
+// CUSTOM OUTFIT CARD: your name for it, photos in your chosen order (with layer labels when you layered pieces), color-match score, and Edit / Delete buttons
+function ccard(x){const ps=x.ps,sc=scoreParts(ps),st=styleOf(ps),ly=x.c.ly||{};
+ const eff=p=>ly[String(p.id)]||defLayer(p),lp=ps.filter(canLayer),multi=lp.length>1;
+ const rank={base:0,mid:1,outer:2},chain=multi?lp.map((p,i)=>[p,i]).sort((a,b)=>rank[eff(a[0])]-rank[eff(b[0])]||a[1]-b[1]).map(a=>a[0]):[];
  return `
-  <div class="out"><div class="ctitle">${esc(x.c.n)}</div>${st?`<div class="badge">✦ ${esc(st)}</div>`:""}<div class="row">${ps.map(p=>`<figure><img src="${p.thumb}" alt=""><figcaption>${p.statement?"★ ":""}${esc(title(p))}</figcaption></figure>`).join("")}</div>
+  <div class="out"><div class="ctitle">${esc(x.c.n)}</div>${st?`<div class="badge">✦ ${esc(st)}</div>`:""}<div class="row">${ps.map(p=>`<figure><img src="${p.thumb}" alt=""><figcaption>${p.statement?"★ ":""}${esc(title(p))}${multi&&canLayer(p)?" · "+LAYERS.find(l=>l[0]===eff(p))[1]:""}</figcaption></figure>`).join("")}</div>
   <div class="hd"><span class="why">${reason(ps)}</span><span class="score">${Math.round(sc*100)}% match</span></div>
   <div class="pal">${ps.map(p=>`<i style="background:${hsl(p)}"></i>`).join("")}</div>
+  ${multi?`<div class="note">Layers (inner → outer): ${chain.map(p=>esc(title(p))).join(" → ")}</div>`:""}
   <div class="cbtns"><button class="sv" data-cedit="${x.i}">Edit</button><button class="sv" data-cdel="${x.i}">Delete</button></div></div>`}
 $("cSort").innerHTML=SORTS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
 $("cQ").oninput=e=>{cQ=e.target.value;renderPick()};
@@ -698,7 +761,10 @@ $("cSelOnly").onclick=()=>{cSelOnly=!cSelOnly;renderPick()};
 $("fOpen").onclick=()=>$("fsheet").classList.add("on");
 $("fDone").onclick=()=>$("fsheet").classList.remove("on");
 $("fsheet").onclick=e=>{if(e.target.id==="fsheet")$("fsheet").classList.remove("on")};
-$("fReset").onclick=()=>{styleF="";occF="";wxF="";focusId="";$("useOuter").checked=true;render()};
+$("fReset").onclick=()=>{styleF="";occF="";wxF="";focusId="";Object.keys(colorF).forEach(k=>colorF[k]=[]);$("useOuter").checked=true;render()};
+$("colAdd").onclick=()=>{const v=$("colPick").value,a=colorF[cScope];if(!a.includes(v))a.push(v);render()};
+$("colClr").onclick=()=>{Object.keys(colorF).forEach(k=>colorF[k]=[]);render()};
+document.addEventListener("change",e=>{const l=e.target.closest("[data-lsel]");if(l)cLayer[l.dataset.lsel]=l.value});
 $("cNew").onclick=()=>openBuilder(null);
 $("cCancel").onclick=closeBuilder;
 $("cSave").onclick=saveBuilder;
@@ -713,7 +779,12 @@ document.addEventListener("click",e=>{
  const x=e.target.closest("[data-x]");if(x){items=items.filter(i=>String(i.id)!==x.dataset.x);save();render()}
  const sv=e.target.closest("[data-sv]");if(sv)toggleSaved(sv.dataset.sv.split(","))
  const cf=e.target.closest("[data-cf]");if(cf){cF=cf.dataset.cf;renderPick()}
- const fc=e.target.closest("[data-fclr]");if(fc){const k=fc.dataset.fclr;if(k==="style")styleF="";else if(k==="occ")occF="";else if(k==="wx")wxF="";else if(k==="focus")focusId="";else if(k==="outer")$("useOuter").checked=true;render()}
+ const fc=e.target.closest("[data-fclr]");if(fc){const k=fc.dataset.fclr;if(k==="style")styleF="";else if(k==="occ")occF="";else if(k==="wx")wxF="";else if(k==="focus")focusId="";else if(k==="outer")$("useOuter").checked=true;else if(k.indexOf("col:")===0)colorF[k.slice(4)]=[];render()}
+ const cs=e.target.closest("[data-cscope]");if(cs){cScope=cs.dataset.cscope;render()}
+ const cl=e.target.closest("[data-colf]");if(cl){const a=colorF[cScope],v=cl.dataset.colf,i=a.indexOf(v);if(i>=0)a.splice(i,1);else a.push(v);render()}
+ const bc=e.target.closest("[data-bcol]");if(bc){const v=bc.dataset.bcol,i=cCol.indexOf(v);if(i>=0)cCol.splice(i,1);else cCol.push(v);renderPick()}
+ const lm=e.target.closest("[data-lmv]");if(lm){const [a,d]=lm.dataset.lmv.split("|").map(Number),j=a+d;if(j>=0&&j<cOrder.length){[cOrder[a],cOrder[j]]=[cOrder[j],cOrder[a]];renderLayers()}}
+ if(e.target.closest("#cAuto"))autoOrder();
  const cpk=e.target.closest("[data-cp]");if(cpk)togglePick(cpk.dataset.cp);
  const ce=e.target.closest("[data-cedit]");if(ce)openBuilder(+ce.dataset.cedit);
  const cd=e.target.closest("[data-cdel]");if(cd&&confirm("Delete this outfit?")){custom.splice(+cd.dataset.cdel,1);saveCustom();render()}});
@@ -778,7 +849,7 @@ $("imp").onclick=()=>$("impf").click();
 $("impf").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);const arr=Array.isArray(d)?d:d&&d.items;if(!Array.isArray(arr))throw 0;
  const ids=new Set(items.map(i=>String(i.id)));arr.forEach(i=>{if(i&&i.thumb&&!ids.has(String(i.id)))items.push(i)});
  let m=0;if(d&&!Array.isArray(d)&&Array.isArray(d.saved)){const have=new Set(saved.map(skey));d.saved.forEach(x=>{if(Array.isArray(x)&&x.length&&!have.has(skey(x))){saved.push(x.map(String));have.add(skey(x));m++}})}
- let mc=0;if(d&&!Array.isArray(d)&&Array.isArray(d.custom)){const hv=new Set(custom.map(c=>c.n+"|"+skey(c.ids)));d.custom.forEach(c=>{if(c&&Array.isArray(c.ids)&&c.ids.length){const k=String(c.n||"My outfit")+"|"+skey(c.ids);if(!hv.has(k)){custom.push({n:String(c.n||"My outfit").slice(0,40),ids:c.ids.map(String)});hv.add(k);mc++}}})}
+ let mc=0;if(d&&!Array.isArray(d)&&Array.isArray(d.custom)){const hv=new Set(custom.map(c=>c.n+"|"+skey(c.ids)));d.custom.forEach(c=>{if(c&&Array.isArray(c.ids)&&c.ids.length){const k=String(c.n||"My outfit")+"|"+skey(c.ids);if(!hv.has(k)){custom.push({n:String(c.n||"My outfit").slice(0,40),ids:c.ids.map(String),ly:(c.ly&&typeof c.ly==="object")?c.ly:undefined});hv.add(k);mc++}}})}
  saveCustom();save();saveSaved();render();$("bk").textContent="Imported "+arr.length+" items"+(m?" and "+m+" saved outfit"+(m>1?"s":""):"")+(mc?", "+mc+" custom outfit"+(mc>1?"s":""):"")+"."}catch(x){$("bk").textContent="That file isn't a valid wardrobe backup."}};r.readAsText(f)};
 
 // EMAIL ACCOUNT: save your email on this device and email yourself a backup (share sheet on phones, mail app on computers)
