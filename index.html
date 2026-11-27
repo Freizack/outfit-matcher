@@ -309,6 +309,7 @@ main{padding-bottom:110px}
 <label>Category</label><select id="eCat"></select>
 <label>Occasions</label><div class="occ" id="eOcc"></div>
 <label>Weather</label><div class="occ" id="eWx"></div>
+<label class="chk"><input type="checkbox" id="eOver"> Oversized fit (baggy / loose, a streetwear look)</label>
 <label class="chk"><input type="checkbox" id="eStar"> ★ Statement piece (bold, eye-catching)</label>
 <div class="st" id="eSt"></div>
 <div class="btns"><button class="btn" id="eOut">👗 Outfits</button><button class="btn" id="eAI">✨ Identify</button><button class="btn del" id="eDel">Delete</button><button class="btn pri" id="eDone">Done</button></div>
@@ -584,13 +585,13 @@ const isEarthy=it=>/beige|brown|orange|green|olive|tan|cream/.test(it.name||"");
 const isNeut=it=>it.neutral||/beige|white|grey|black|charcoal|denim|navy|brown|cream/.test(it.name||"");
 const STYLES=[
  {id:"street",lvl:"Casual",name:"Streetwear",sig:2,blurb:"Baggy fits, graphic tees and hoodies with chunky sneakers",fit:it=>{const t=fx(it);
-  if(it.cat==="top")return/crop/.test(t)?.85:/compression|tank|button|polo|turtle/.test(t)?.3:/graphic|baggy|oversized|jersey/.test(t)?.9:/long sleeve/.test(t)?.7:/tee|t-shirt|shirt/.test(t)?.6:.4;
-  if(it.cat==="bottom")return/skinny/.test(t)?.2:/baggy|cargo|carpenter|jorts|wide|loose/.test(t)?.9:/sweatpants|jogger/.test(t)?.55:/flared/.test(t)?.4:/jeans|denim/.test(t)?.5:/chino/.test(t)?.3:.4;
-  if(it.cat==="outer")return/hoodie|zip/.test(t)?.9:/jacket|vest/.test(t)?.65:/sweater/.test(t)?.55:.4;
+  if(it.cat==="top")return it.oversized?.95:/crop/.test(t)?(/button/.test(t)?.7:.6):/compression|tank|button|polo|turtle/.test(t)?.3:/graphic|baggy|oversized|jersey/.test(t)?.9:/hoodie|sweatshirt/.test(t)?.85:/long sleeve/.test(t)?.7:/tee|t-shirt|shirt/.test(t)?.6:.4;
+  if(it.cat==="bottom")return it.oversized?.95:/skinny/.test(t)?.2:/baggy|cargo|carpenter|jorts|wide|loose/.test(t)?.9:/sweatpants|jogger/.test(t)?.55:/flared/.test(t)?.4:/jeans|denim/.test(t)?.5:/chino/.test(t)?.3:.4;
+  if(it.cat==="outer")return it.oversized?.95:/hoodie|zip/.test(t)?.9:/jacket|vest/.test(t)?.65:/sweater/.test(t)?.55:.4;
   if(it.cat==="shoes")return/air force|af1|jordan|dunk|new balance|1906|nike|yeezy|samba/.test(t)?.9:/sneaker/.test(t)?.6:.25;
   return 0}},
  {id:"y2k",lvl:"Casual",name:"Y2K",sig:1,blurb:"Flared denim, cropped or pastel tops and bright pops of color",fit:it=>{const t=fx(it);let v;
-  if(it.cat==="top"){v=/cropped|crop|baby|tank/.test(t)?.9:/graphic|baggy/.test(t)?.65:/tee|t-shirt/.test(t)?.5:/button/.test(t)?.35:/long sleeve|turtle/.test(t)?.3:.4;if(isBright(it))v+=.2}
+  if(it.cat==="top"){v=/cropped|crop|baby|tank/.test(t)?.95:/graphic|baggy/.test(t)?.65:/tee|t-shirt/.test(t)?.5:/button/.test(t)?.35:/long sleeve|turtle/.test(t)?.3:.4;if(isBright(it))v+=.2}
   else if(it.cat==="bottom"){v=/flared/.test(t)?.95:/jorts/.test(t)?.8:/skinny/.test(t)?.55:/baggy/.test(t)?.6:/cargo/.test(t)?.55:/jeans|denim/.test(t)?.5:/sweatpants/.test(t)?.25:/chino/.test(t)?.2:.35;if(isBright(it))v+=.1}
   else if(it.cat==="outer"){v=/denim jacket/.test(t)?.9:/vest/.test(t)?.8:/zip/.test(t)?.75:/hoodie/.test(t)?.4:/sweater/.test(t)?.3:/winter/.test(t)?.2:.3;if(isBright(it))v+=.1}
   else if(it.cat==="shoes"){v=/pink/.test(t)?.9:/puma/.test(t)?.85:/air force|af1/.test(t)?.6:/jordan/.test(t)?.55:/sneaker/.test(t)?.5:/birkenstock|slip/.test(t)?.5:/new balance/.test(t)?.35:.3}
@@ -598,7 +599,7 @@ const STYLES=[
   return clamp01(v)}},
  {id:"retro",lvl:"Casual",name:"Retro Sports",sig:1,blurb:"Team jerseys, varsity-style pieces and classic sneakers",fit:it=>{const t=fx(it);
   if(it.cat!=="shoes"&&TEAM.test(t))return.95;
-  if(it.cat==="top")return/crop/.test(t)?.75:/tee|t-shirt|jersey/.test(t)?.5:.3;
+  if(it.cat==="top")return/crop/.test(t)?(it.oversized?.8:.75):/tee|t-shirt|jersey/.test(t)?.5:.3;
   if(it.cat==="bottom")return/baggy/.test(t)?.65:/jorts|sweatpants/.test(t)?.6:/cargo/.test(t)?.5:/jeans|denim/.test(t)?.55:/chino|flared/.test(t)?.4:.35;
   if(it.cat==="outer")return/hoodie|sweater|denim jacket/.test(t)?.6:.4;
   if(it.cat==="shoes")return/nike|jordan|air force|dunk|puma|new balance|adidas/.test(t)?.8:/sneaker/.test(t)?.6:.25;
@@ -638,14 +639,14 @@ const STYLES=[
   if(it.cat==="shoes")return/trail|salomon|hiking|boot|990|1906/.test(t)?.9:/new balance|running|asics/.test(t)?.8:/sneaker/.test(t)?.45:.2;
   return 0}},
  {id:"prep",name:"Preppy",lvl:"Smart-casual",sig:2,pal:["blue","navy","white","pink","green","beige","red"],blurb:"Polos, button-ups and sweaters with chinos and clean sneakers or loafers",fit:it=>{const t=fx(it),g=/graphic|print|jersey/.test(t)||TEAM.test(t);let v;
-  if(it.cat==="top")v=/polo/.test(t)?.95:(/button|oxford|shirt/.test(t)&&!/t-shirt/.test(t))?.9:/sweater|cable|crewneck|knit/.test(t)?.85:/long sleeve|turtle/.test(t)?.55:/tee|t-shirt/.test(t)?.4:/hoodie/.test(t)?.25:.35;
+  if(it.cat==="top")v=/crop/.test(t)&&/button/.test(t)&&!it.oversized?.15:/polo/.test(t)?.95:(/button|oxford|shirt/.test(t)&&!/t-shirt/.test(t))?.9:/sweater|cable|crewneck|knit/.test(t)?.85:/long sleeve|turtle/.test(t)?.55:/tee|t-shirt/.test(t)?.4:/hoodie/.test(t)?.25:.35;
   else if(it.cat==="bottom")v=/chino|khaki|pleated|trouser|dress pants/.test(t)?.95:/jorts|short/.test(t)?.4:/straight|jeans/.test(t)?.55:/baggy|wide/.test(t)?.2:/cargo/.test(t)?.3:/sweatpants|jogger/.test(t)?.05:.3;
   else if(it.cat==="outer")v=/blazer|varsity/.test(t)?.95:/cardigan/.test(t)?.9:/sweater|vest/.test(t)?.7:/denim jacket/.test(t)?.5:/hoodie|zip/.test(t)?.3:.35;
   else if(it.cat==="shoes")v=/loafer|boat|oxford|derby|sperry/.test(t)?.95:/air force|af1|samba|stan smith|white|sneaker/.test(t)?.6:/boot/.test(t)?.3:.2;
   else return 0;
   return g?v*.2:v}},
  {id:"smart",name:"Smart Casual",lvl:"Smart-casual",sig:2,pal:["navy","blue","grey","white","beige","green","black","brown"],blurb:"One polished piece with relaxed ones: knits or button-ups, chinos or dark jeans, clean shoes",fit:it=>{const t=fx(it),g=/graphic|print|jersey/.test(t)||TEAM.test(t);let v;
-  if(it.cat==="top")v=/button|oxford|polo|henley|sweater|turtle|quarter|long sleeve|knit/.test(t)?.85:/tee|t-shirt/.test(t)?.6:/hoodie/.test(t)?.15:.4;
+  if(it.cat==="top")v=/crop/.test(t)&&/button/.test(t)&&!it.oversized?.7:/button|oxford|polo|henley|sweater|turtle|quarter|long sleeve|knit/.test(t)?.85:/tee|t-shirt/.test(t)?.6:/hoodie/.test(t)?.15:.4;
   else if(it.cat==="bottom")v=/chino|pleated|trouser|dress pants/.test(t)?.95:/baggy|wide/.test(t)?.35:/straight|jeans|denim/.test(t)?.75:/cargo/.test(t)?.35:/sweatpants|jogger/.test(t)?.05:/jorts|short/.test(t)?.1:.3;
   else if(it.cat==="outer")v=/blazer/.test(t)?.95:/cardigan|quarter/.test(t)?.85:/sweater/.test(t)?.7:/denim jacket/.test(t)?.65:/bomber/.test(t)?.6:/zip/.test(t)?.5:/hoodie/.test(t)?.15:.35;
   else if(it.cat==="shoes")v=/loafer|derby|oxford|suede|chelsea/.test(t)?.9:/air force|af1|samba|stan smith|white/.test(t)?.8:/boot/.test(t)?.6:/sneaker/.test(t)?.55:.25;
@@ -666,7 +667,7 @@ const STYLES=[
   return 0}}
 ];
 // Style fit: the style's own rating, reduced a little when the piece is outside the style's usual color palette (and Old Money avoids bright colors)
-const styleFit=(st,it)=>{let v=st.fit(it);if(st.pal&&v>0){const P=new Set([...st.pal,...st.pal.map(grpOf)]);if(!allFams(it).some(f=>P.has(f)||P.has(grpOf(f))))v*=.75}if(st.id==="oldmoney"&&isBright(it))v*=.5;if(["prep","smart","oldmoney","academia"].includes(st.id)&&/crop/.test(fx(it)))v*=.6;return clamp01(v)};
+const styleFit=(st,it)=>{let v=st.fit(it);if(st.pal&&v>0){const P=new Set([...st.pal,...st.pal.map(grpOf)]);if(!allFams(it).some(f=>P.has(f)||P.has(grpOf(f))))v*=.75}if(st.id==="oldmoney"&&isBright(it))v*=.5;const tx=fx(it),dressy=["prep","smart","oldmoney","academia"].includes(st.id);if(dressy&&/crop/.test(tx)&&!(["prep","smart"].includes(st.id)&&/button/.test(tx)&&!it.oversized))v*=.6;if(dressy&&it.oversized)v*=.5;return clamp01(v)};
 // Does this piece list read as one of the styles? Returns the best style name, or "" (used for the badge on outfit cards)
 function styleOf(parts){let best="",bv=0;STYLES.forEach(st=>{const f=parts.map(p=>styleFit(st,p));if(f.some(x=>x<.5)||f.filter(x=>x>=.85).length<st.sig)return;const a=f.reduce((x,y)=>x+y,0)/f.length;if(a>bv){bv=a;best=st.name}});return best}
 // Is this piece allowed by the occasion / weather filters? (Cold also lets guessed-mild T-shirts through as base layers)
@@ -736,7 +737,7 @@ function render(){
  const vis=items.filter(i=>!wardF||i.cat===wardF);
  $("wardrobe").innerHTML=vis.length?`<div class="grid">${vis.map(i=>`
   <div class="item"><img src="${i.thumb}" alt="" data-e="${i.id}">${i.statement?'<span class="star">★ Statement</span>':""}<button class="x" data-x="${i.id}" aria-label="Remove">×</button>
-  <div class="meta" data-e="${i.id}">${dotsOf(i)}<span style="min-width:0;flex:1"><b class="tt">${esc(title(i))}</b><span class="tag">${busy[i.id]?"Identifying…":LBL[i.cat]+" · "+i.name+(isMulti(i)?" · Multi":"")+(fmLabel(i)?" · "+fmLabel(i):"")}</span></span>
+  <div class="meta" data-e="${i.id}">${dotsOf(i)}<span style="min-width:0;flex:1"><b class="tt">${esc(title(i))}</b><span class="tag">${busy[i.id]?"Identifying…":LBL[i.cat]+" · "+i.name+(i.oversized?" · Oversized":"")+(isMulti(i)?" · Multi":"")+(fmLabel(i)?" · "+fmLabel(i):"")}</span></span>
   </div></div>`).join("")}</div>`
   :`<div class="empty">${items.length?"No "+LBL[wardF].toLowerCase()+" yet. Add some above.":"No clothes yet. Pick a category above, then add photos."}</div>`;
  const o=mode==="color"?build():[],groups=mode==="style"?buildStyles():[];
@@ -913,7 +914,7 @@ function shoeUI(){const sh=$("eCat").value==="shoes";$("brandWrap").style.displa
 function fillCols(){const it=ed();if(!it)return;$("eCols").innerHTML=isMulti(it)?it.colors.slice(1).map(c=>`<button type="button" class="chip on" data-ecd="${c}"><i class="dot" style="--c:${colHex[c]||"#999999"}"></i>${colLabel(c)} ×</button>`).join(""):'<span class="tag">Single color</span>'}
 function fillEdit(){const it=ed();if(!it)return;fillCols();
  $("eColor").value=hsl2hex(it.h,it.s,it.l);$("eColName").textContent=it.name;
- $("eName").value=it.label||"";$("eStar").checked=!!it.statement;$("eType").value=it.type||"";$("eCat").value=it.cat;$("eBrand").value=it.brand||"";shoeUI();
+ $("eName").value=it.label||"";$("eStar").checked=!!it.statement;$("eOver").checked=!!it.oversized;$("eType").value=it.type||"";$("eCat").value=it.cat;$("eBrand").value=it.brand||"";shoeUI();
  $("eAI").style.display=sample&&lim&&lim.images?"":"none";
  $("eSt").textContent=busy[it.id]?"Identifying…":"";fillOcc();fillWx()}
 function openEdit(id){editId=id;const it=ed();if(!it)return;
@@ -933,6 +934,7 @@ $("eName").oninput=e=>{ed().label=e.target.value};
 $("eType").oninput=e=>{ed().type=e.target.value;fillOcc();fillWx()};
 $("eCat").onchange=e=>{const it=ed();it.cat=e.target.value;it.auto=false};
 $("eStar").onchange=e=>{ed().statement=e.target.checked};
+$("eOver").onchange=e=>{ed().oversized=e.target.checked};
 $("eDone").onclick=closeEdit;
 $("eColBtn").onclick=()=>{const it=ed();if(!it)return;const hx=$("eColAdd").value,[h,s,l]=rgb2hsl(parseInt(hx.slice(1,3),16),parseInt(hx.slice(3,5),16),parseInt(hx.slice(5,7),16));const f=colorName(h,s,l).replace(/^(light|dark) /,"");const c=it.colors&&it.colors.length?it.colors:[famOf(it)];if(!c.includes(f)&&c.length<4)c.push(f);it.colors=c;fillCols()};
 $("eColRe").onclick=()=>{const it=ed();if(!it)return;const im=new Image();im.onload=()=>{it.colors=detectCols(im,famOf(it));fillCols();save();render()};im.src=it.thumb};
