@@ -208,6 +208,8 @@ main{padding-bottom:110px}
 /* MULTICOLOR DOTS on wardrobe cards */
 .sws{display:flex;gap:3px;flex:none;margin-top:5px}
 .sws .sw{margin:0}
+/* Formality label next to each style name */
+.sty h3 .lvl{font:500 10px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--acc);margin-left:10px;vertical-align:middle}
 </style>
 </head>
 <!-- PAGE CONTENT: the visible app. It has three tabs (Closet, Outfits, Account), a bottom navigation bar and the editor popup -->
@@ -272,6 +274,7 @@ main{padding-bottom:110px}
   <!-- INSPIRED OR COLOR MATCHED: choose between outfits built around a named style (Y2K, Streetwear...) or the plain color-matched suggestions -->
   <div class="flt"><p class="lb">Show</p><div class="chips" id="modeChips"></div></div>
   <div class="flt" id="styleFlt"><p class="lb">Style</p><div class="chips" id="styleChips"></div></div>
+  <div class="flt" id="lvlFlt"><p class="lb">Formality</p><div class="chips" id="lvlChips"></div></div>
   <div class="flt"><p class="lb">Occasion</p><div class="chips" id="occChips"></div></div>
   <div class="flt"><p class="lb">Weather</p><div class="chips" id="wxChips"></div></div>
   <div class="flt" id="colFlt"><p class="lb">Color</p><div class="chips" id="colScope"></div><div class="chips" id="colSw" style="margin-top:8px"></div>
@@ -445,17 +448,20 @@ function handleFiles(files){
 
 // MATCHING: scores how well two colors go together (neutrals, same family, neighbors, opposites, clashes)
 function dh(a,b){const d=Math.abs(a-b)%360;return d>180?360-d:d}
+// COLOR MATCHING (from colour-theory basics): neutrals (black, white, grey, plus brown / beige / navy / denim) go with anything, but a grey should be close in brightness to the color it sits beside. Two colors work as monochromatic (one hue, different tones), analogous (neighbors on the wheel) or complementary (opposites, toned down). Extra credit when two colors share a similar saturation or brightness, and a penalty when two bold colors compete
 function pair(a,b){
  if(a.neutral&&b.neutral){
   const nb=[a,b].map(x=>x.name);
   if(nb.includes("navy")&&nb.includes("black"))return .6;
   if(nb.includes("brown")&&nb.includes("black"))return .6;
   return .85}
- if(a.neutral||b.neutral){const c=a.neutral?b:a;return c.s>.75&&c.l>.4&&c.l<.6?.82:.9}
+ if(a.neutral||b.neutral){const c=a.neutral?b:a,n=a.neutral?a:b;let v=c.s>.75&&c.l>.4&&c.l<.6?.82:.9;
+  if(n.s<.15&&n.l>.2&&n.l<.85&&Math.abs(n.l-c.l)>.45)v=Math.min(v,.82);return v}
  const d=dh(a.h,b.h);let v;
- if(d<=25)v=.8;else if(d<=50)v=.75;else if(d>=150)v=.7;else if(d>=100&&d<=140)v=.55;else v=.3;
+ if(d<=25){v=.8;if(Math.abs(a.l-b.l)>=.15)v+=.08}else if(d<=50)v=.75;else if(d>=150)v=.7;else if(d>=100&&d<=140)v=.55;else v=.35;
+ if(d>25){if(Math.abs(a.s-b.s)<.2)v+=.04;if(Math.abs(a.l-b.l)<.2)v+=.04}
  if(a.s>.6&&b.s>.6&&d>25)v-=.15;
- return Math.max(.1,v)}
+ return Math.max(.1,Math.min(.95,v))}
 
 // Writes the short explanation shown on each outfit card (for example "Complementary")
 function reason(parts){
@@ -465,7 +471,7 @@ function reason(parts){
  if(!ch.length)return"All neutrals — foolproof";
  if(ch.length===1)return`Neutral base with a ${ch[0].name} pop`;
  const d=dh(ch[0].h,ch[1].h);
- if(d<=25)return"Tonal — same color family";
+ if(d<=25)return"Monochromatic — one color family, different tones";
  if(d<=50)return"Analogous — neighbors on the wheel";
  if(d>=150)return"Complementary — opposite colors";
  return"Bold mix"}
@@ -473,7 +479,7 @@ function reason(parts){
 
 // OCCASION AND WEATHER OPTIONS, and the filter choices currently selected
 const OCC=[["casual","Casual"],["work","Work"],["night","Night out"]],WX=[["cold","Cold"],["mild","Mild"],["hot","Hot"]];
-let occF="",wxF="",tab="closet",wardF="",mode="style",styleF="",seed=0;
+let occF="",wxF="",tab="closet",wardF="",mode="style",styleF="",lvlF="",seed=0;
 // TYPE RULES: keywords in a piece's type decide which occasions it suits (casual, work, night out). Your own choice in the editor overrides these
 const RX={casual:/vest|jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
  work:/pleated|trouser|wide-leg pants|midi skirt|linen pants|dress shoe|button|dress pants|chino|blazer|loafer|trench|polo|cardigan|shirt dress|sweater|slack|oxford|straight-leg|white sneakers/,
@@ -499,6 +505,7 @@ document.addEventListener("click",e=>{
  const n=e.target.closest("[data-tab]");if(n)setTab(n.dataset.tab);
  const o=e.target.closest("[data-occ]");if(o){occF=o.dataset.occ;render()}
  const md=e.target.closest("[data-mode]");if(md){mode=md.dataset.mode;render()}
+ const lv=e.target.closest("[data-lvl]");if(lv){lvlF=lv.dataset.lvl;render()}
  const sy=e.target.closest("[data-style]");if(sy){styleF=sy.dataset.style;render()}
  if(e.target.closest("[data-shuffle]")){seed++;render()}
  const wd=e.target.closest("[data-ward]");if(wd){wardF=wd.dataset.ward;render()}
@@ -527,6 +534,8 @@ function scoreParts(parts){
  const stc=parts.filter(p=>p.statement).length;
  if(stc>1)sc-=.2*(stc-1);
  if(stc===1){const loud=parts.filter(p=>!p.statement&&!p.neutral).length;sc+=loud===0?.08:-.1*loud}
+ // Warm colors (reds, oranges, yellows) suit hot weather and cool ones suit cold weather, as a small bonus
+ if(wxF==="hot"||wxF==="cold"){const chp=parts.filter(p=>!p.neutral);if(chp.length){const w=chp.filter(p=>p.h<70||p.h>330).length/chp.length;sc+=(wxF==="hot"?w:1-w)*.03}}
  sc+=parts.length*.01;
  return Math.max(0,Math.min(1,sc))}
 // OUTFIT BUILDER: combines tops + bottoms (or dresses), optional outerwear and shoes, plus vest-under-layer combos; applies the filters, hides outfits with 2+ statement pieces (unless that would leave none), and keeps the best 12
@@ -565,7 +574,7 @@ function build(){
  return lay.concat(rest).sort((a,b)=>b.sc-a.sc)}
 
 
-// INSPIRED STYLES: each style rates every piece from 0 to 1 by keywords in its name / type / brand and by its color. "sig" is how many strongly-fitting (0.85+) pieces an outfit needs to really read as that style
+// INSPIRED STYLES (ideas from men's style guides: formality level first, then the look; each style also has a usual color palette): each style rates every piece from 0 to 1 by keywords in its name / type / brand and by its color. "sig" is how many strongly-fitting (0.85+) pieces an outfit needs to really read as that style
 const fx=it=>((it.label||"")+" "+(it.type||"")+" "+(it.brand||"")).toLowerCase();
 const clamp01=v=>Math.max(0,Math.min(1,v));
 const TEAM=/lakers|brock|hockey|jersey|varsity|los angeles|valley la|\bla\b|nba|nfl/;
@@ -574,43 +583,90 @@ const isBright=it=>(it.s>.6&&it.l>.45)||/pink|yellow|light blue|purple|orange/.t
 const isEarthy=it=>/beige|brown|orange|green|olive|tan|cream/.test(it.name||"");
 const isNeut=it=>it.neutral||/beige|white|grey|black|charcoal|denim|navy|brown|cream/.test(it.name||"");
 const STYLES=[
- {id:"street",name:"Streetwear",sig:2,blurb:"Baggy fits, graphic tees and hoodies with chunky sneakers",fit:it=>{const t=fx(it);
+ {id:"street",lvl:"Casual",name:"Streetwear",sig:2,blurb:"Baggy fits, graphic tees and hoodies with chunky sneakers",fit:it=>{const t=fx(it);
   if(it.cat==="top")return/compression|tank|button|polo|turtle/.test(t)?.3:/graphic|baggy|oversized|jersey/.test(t)?.9:/long sleeve/.test(t)?.7:/tee|t-shirt|shirt/.test(t)?.6:.4;
   if(it.cat==="bottom")return/skinny/.test(t)?.2:/baggy|cargo|carpenter|jorts|wide|loose/.test(t)?.9:/sweatpants|jogger/.test(t)?.55:/flared/.test(t)?.4:/jeans|denim/.test(t)?.5:/chino/.test(t)?.3:.4;
   if(it.cat==="outer")return/hoodie|zip/.test(t)?.9:/jacket|vest/.test(t)?.65:/sweater/.test(t)?.55:.4;
   if(it.cat==="shoes")return/air force|af1|jordan|dunk|new balance|1906|nike|yeezy|samba/.test(t)?.9:/sneaker/.test(t)?.6:.25;
   return 0}},
- {id:"y2k",name:"Y2K",sig:1,blurb:"Flared denim, cropped or pastel tops and bright pops of color",fit:it=>{const t=fx(it);let v;
+ {id:"y2k",lvl:"Casual",name:"Y2K",sig:1,blurb:"Flared denim, cropped or pastel tops and bright pops of color",fit:it=>{const t=fx(it);let v;
   if(it.cat==="top"){v=/cropped|crop|baby|tank/.test(t)?.9:/graphic|baggy/.test(t)?.65:/tee|t-shirt/.test(t)?.5:/button/.test(t)?.35:/long sleeve|turtle/.test(t)?.3:.4;if(isBright(it))v+=.2}
   else if(it.cat==="bottom"){v=/flared/.test(t)?.95:/jorts/.test(t)?.8:/skinny/.test(t)?.55:/baggy/.test(t)?.6:/cargo/.test(t)?.55:/jeans|denim/.test(t)?.5:/sweatpants/.test(t)?.25:/chino/.test(t)?.2:.35;if(isBright(it))v+=.1}
   else if(it.cat==="outer"){v=/denim jacket/.test(t)?.9:/vest/.test(t)?.8:/zip/.test(t)?.75:/hoodie/.test(t)?.4:/sweater/.test(t)?.3:/winter/.test(t)?.2:.3;if(isBright(it))v+=.1}
   else if(it.cat==="shoes"){v=/pink/.test(t)?.9:/puma/.test(t)?.85:/air force|af1/.test(t)?.6:/jordan/.test(t)?.55:/sneaker/.test(t)?.5:/birkenstock|slip/.test(t)?.5:/new balance/.test(t)?.35:.3}
   else return 0;
   return clamp01(v)}},
- {id:"retro",name:"Retro Sports",sig:1,blurb:"Team jerseys, varsity-style pieces and classic sneakers",fit:it=>{const t=fx(it);
+ {id:"retro",lvl:"Casual",name:"Retro Sports",sig:1,blurb:"Team jerseys, varsity-style pieces and classic sneakers",fit:it=>{const t=fx(it);
   if(it.cat!=="shoes"&&TEAM.test(t))return.95;
   if(it.cat==="top")return/tee|t-shirt|jersey/.test(t)?.5:.3;
   if(it.cat==="bottom")return/baggy/.test(t)?.65:/jorts|sweatpants/.test(t)?.6:/cargo/.test(t)?.5:/jeans|denim/.test(t)?.55:/chino|flared/.test(t)?.4:.35;
   if(it.cat==="outer")return/hoodie|sweater|denim jacket/.test(t)?.6:.4;
   if(it.cat==="shoes")return/nike|jordan|air force|dunk|puma|new balance|adidas/.test(t)?.8:/sneaker/.test(t)?.6:.25;
   return 0}},
- {id:"sporty",name:"Athleisure",sig:2,blurb:"Sweats, performance tees and a zip-up for a comfy sporty look",fit:it=>{const t=fx(it);
+ {id:"sporty",lvl:"Casual",name:"Athleisure",sig:2,blurb:"Sweats, performance tees and a zip-up for a comfy sporty look",fit:it=>{const t=fx(it);
   if(it.cat==="top")return/compression|jersey/.test(t)?.9:/tank/.test(t)?.8:/button|polo|turtle/.test(t)?.2:/tee|t-shirt/.test(t)?.7:/graphic/.test(t)?.6:/long sleeve/.test(t)?.5:.4;
   if(it.cat==="bottom")return/sweatpants|jogger|track|short/.test(t)?.95:/jorts|cargo/.test(t)?.5:/chino/.test(t)?.3:/jeans/.test(t)?.2:.3;
   if(it.cat==="outer")return/hoodie|zip/.test(t)?.9:/sweater|winter|vest/.test(t)?.5:/denim/.test(t)?.1:.3;
   if(it.cat==="shoes")return/running|nike|puma|new balance|1906|adidas|jordan/.test(t)?.85:/sneaker/.test(t)?.7:/slip|birkenstock/.test(t)?.2:.3;
   return 0}},
- {id:"dark",name:"All Black",sig:0,blurb:"Head-to-toe dark pieces for a sleek monochrome look",fit:it=>it.cat==="dress"?0:isDark(it)?.95:0},
- {id:"minimal",name:"Clean Minimal",sig:1,blurb:"Neutral colors and plain, simple pieces",fit:it=>{const t=fx(it);let v;
+ {id:"dark",lvl:"Casual / Smart-casual",name:"All Black",sig:0,blurb:"Head-to-toe dark pieces for a sleek monochrome look",fit:it=>it.cat==="dress"?0:isDark(it)?.95:0},
+ {id:"minimal",lvl:"Smart-casual",pal:["black","white","grey","beige"],name:"Clean Minimal",sig:1,blurb:"Neutral colors and plain, simple pieces",fit:it=>{const t=fx(it);let v;
   if(it.cat==="top")v=/graphic|jersey/.test(t)||TEAM.test(t)?.15:/long sleeve|turtle|polo|button|t-shirt|tee/.test(t)?.85:.5;
   else if(it.cat==="bottom")v=/chino/.test(t)?.95:/baggy/.test(t)?.6:/skinny|straight|jeans/.test(t)?.75:/cargo/.test(t)?.65:/sweatpants/.test(t)?.35:/jorts/.test(t)?.3:/flared/.test(t)?.4:.4;
   else if(it.cat==="outer")v=TEAM.test(t)?.2:/sweater/.test(t)?.75:/winter/.test(t)?.7:/zip|hoodie/.test(t)?.6:/denim|vest/.test(t)?.5:.4;
   else if(it.cat==="shoes")v=/air force|af1/.test(t)?.85:/sneaker/.test(t)?.75:/slip/.test(t)?.6:/jordan/.test(t)?.6:.5;
   else return 0;
   if(!isNeut(it))v*=.3;if(it.statement)v*=.4;return v}},
- {id:"earth",name:"Earth Tones",sig:2,blurb:"Beige, brown, orange and green with simple neutrals",fit:it=>it.cat==="dress"?0:isEarthy(it)?.9:/white|black|charcoal|grey|denim|cream/.test(it.name||"")?.55:.2}
+ {id:"earth",lvl:"Casual / Smart-casual",name:"Earth Tones",sig:2,blurb:"Beige, brown, orange and green with simple neutrals",fit:it=>it.cat==="dress"?0:isEarthy(it)?.9:/white|black|charcoal|grey|denim|cream/.test(it.name||"")?.55:.2}
+,
+ {id:"skater",name:"Skater",lvl:"Casual",sig:2,blurb:"Baggy or wide-leg pants, graphic tees and skate shoes",fit:it=>{const t=fx(it);
+  if(it.cat==="top")return/graphic|band|thrasher|palace/.test(t)?.9:/flannel|tee|t-shirt/.test(t)?.7:/tank|long sleeve/.test(t)?.45:/button|polo/.test(t)?.25:.4;
+  if(it.cat==="bottom")return/skinny/.test(t)?.15:/baggy|wide|loose|carpenter|cargo/.test(t)?.9:/jorts|short/.test(t)?.65:/jeans|denim/.test(t)?.65:/sweatpants|jogger/.test(t)?.4:/chino/.test(t)?.25:.35;
+  if(it.cat==="outer")return/hoodie|zip/.test(t)?.85:/jacket|flannel/.test(t)?.6:/sweater/.test(t)?.5:.4;
+  if(it.cat==="shoes")return/vans|converse|nike sb|skate|dunk|old skool|chuck/.test(t)?.95:/jordan|air force|af1/.test(t)?.5:/sneaker/.test(t)?.6:/new balance|1906/.test(t)?.4:.2;
+  return 0}},
+ {id:"work",name:"Workwear",lvl:"Casual",sig:2,pal:["brown","beige","green","black","blue","navy","denim"],blurb:"Heavy denim, carpenter or cargo pants, flannels and boots in earthy tones",fit:it=>{const t=fx(it);
+  if(it.cat==="top")return/flannel/.test(t)?.9:/henley|pocket/.test(t)?.8:/long sleeve|tee|t-shirt/.test(t)?.6:/button/.test(t)?.55:/graphic/.test(t)?.4:/polo/.test(t)?.3:.4;
+  if(it.cat==="bottom")return/carpenter|work|dickies|cargo/.test(t)?.95:/baggy|jeans|denim/.test(t)?.75:/chino/.test(t)?.6:/jorts|short/.test(t)?.35:/sweatpants|jogger/.test(t)?.2:.4;
+  if(it.cat==="outer")return/carhartt|work jacket|chore|canvas|denim jacket|vest/.test(t)?.9:/jacket/.test(t)?.8:/hoodie|zip/.test(t)?.6:/sweater/.test(t)?.5:.4;
+  if(it.cat==="shoes")return/boot|timberland|redwing/.test(t)?.95:/sneaker|air force|jordan|new balance/.test(t)?.35:.2;
+  return 0}},
+ {id:"gorp",name:"Gorpcore",lvl:"Casual",sig:2,pal:["green","black","brown","beige","grey","red","blue"],blurb:"Technical layers, cargo pants and trail-style sneakers in earthy colors",fit:it=>{const t=fx(it);
+  if(it.cat==="top")return/fleece|technical|performance|quarter|base layer/.test(t)?.9:/long sleeve/.test(t)?.6:/tee|t-shirt/.test(t)?.5:/graphic/.test(t)?.3:.4;
+  if(it.cat==="bottom")return/technical|nylon|hiking|cargo/.test(t)?.85:/jogger|track|sweatpants/.test(t)?.55:/short/.test(t)?.5:.35;
+  if(it.cat==="outer")return/shell|windbreaker|fleece|utility|arc|north face|patagonia/.test(t)?.95:/vest/.test(t)?.8:/puffer|zip/.test(t)?.75:/hoodie/.test(t)?.4:/denim/.test(t)?.1:.35;
+  if(it.cat==="shoes")return/trail|salomon|hiking|boot|990|1906/.test(t)?.9:/new balance|running|asics/.test(t)?.8:/sneaker/.test(t)?.45:.2;
+  return 0}},
+ {id:"prep",name:"Preppy",lvl:"Smart-casual",sig:2,pal:["blue","navy","white","pink","green","beige","red"],blurb:"Polos, button-ups and sweaters with chinos and clean sneakers or loafers",fit:it=>{const t=fx(it),g=/graphic|print|jersey/.test(t)||TEAM.test(t);let v;
+  if(it.cat==="top")v=/polo/.test(t)?.95:(/button|oxford|shirt/.test(t)&&!/t-shirt/.test(t))?.9:/sweater|cable|crewneck|knit/.test(t)?.85:/long sleeve|turtle/.test(t)?.55:/tee|t-shirt/.test(t)?.4:/hoodie/.test(t)?.25:.35;
+  else if(it.cat==="bottom")v=/chino|khaki|pleated|trouser|dress pants/.test(t)?.95:/jorts|short/.test(t)?.4:/straight|jeans/.test(t)?.55:/baggy|wide/.test(t)?.2:/cargo/.test(t)?.3:/sweatpants|jogger/.test(t)?.05:.3;
+  else if(it.cat==="outer")v=/blazer|varsity/.test(t)?.95:/cardigan/.test(t)?.9:/sweater|vest/.test(t)?.7:/denim jacket/.test(t)?.5:/hoodie|zip/.test(t)?.3:.35;
+  else if(it.cat==="shoes")v=/loafer|boat|oxford|derby|sperry/.test(t)?.95:/air force|af1|samba|stan smith|white|sneaker/.test(t)?.6:/boot/.test(t)?.3:.2;
+  else return 0;
+  return g?v*.2:v}},
+ {id:"smart",name:"Smart Casual",lvl:"Smart-casual",sig:2,pal:["navy","blue","grey","white","beige","green","black","brown"],blurb:"One polished piece with relaxed ones: knits or button-ups, chinos or dark jeans, clean shoes",fit:it=>{const t=fx(it),g=/graphic|print|jersey/.test(t)||TEAM.test(t);let v;
+  if(it.cat==="top")v=/button|oxford|polo|henley|sweater|turtle|quarter|long sleeve|knit/.test(t)?.85:/tee|t-shirt/.test(t)?.6:/hoodie/.test(t)?.15:.4;
+  else if(it.cat==="bottom")v=/chino|pleated|trouser|dress pants/.test(t)?.95:/baggy|wide/.test(t)?.35:/straight|jeans|denim/.test(t)?.75:/cargo/.test(t)?.35:/sweatpants|jogger/.test(t)?.05:/jorts|short/.test(t)?.1:.3;
+  else if(it.cat==="outer")v=/blazer/.test(t)?.95:/cardigan|quarter/.test(t)?.85:/sweater/.test(t)?.7:/denim jacket/.test(t)?.65:/bomber/.test(t)?.6:/zip/.test(t)?.5:/hoodie/.test(t)?.15:.35;
+  else if(it.cat==="shoes")v=/loafer|derby|oxford|suede|chelsea/.test(t)?.9:/air force|af1|samba|stan smith|white/.test(t)?.8:/boot/.test(t)?.6:/sneaker/.test(t)?.55:.25;
+  else return 0;
+  return g?v*.2:v}},
+ {id:"oldmoney",name:"Old Money",lvl:"Smart-casual",sig:2,pal:["navy","blue","white","beige","green","red","brown"],blurb:"Quiet, logo-free pieces: knits, button-ups, tailored pants and loafers in classic colors",fit:it=>{const t=fx(it),g=/graphic|print|jersey/.test(t)||TEAM.test(t);let v;
+  if(it.cat==="top")v=/cable|sweater|knit|polo|oxford|button|turtle/.test(t)?.9:/long sleeve/.test(t)?.5:.3;
+  else if(it.cat==="bottom")v=/tailored|pleated|trouser|dress pants|chino/.test(t)?.95:/straight|jeans/.test(t)?.5:.2;
+  else if(it.cat==="outer")v=/blazer|overcoat|coat|barbour/.test(t)?.95:/cardigan/.test(t)?.9:/sweater/.test(t)?.8:/vest/.test(t)?.6:.3;
+  else if(it.cat==="shoes")v=/loafer|derby|oxford|brogue/.test(t)?.95:/sneaker|white/.test(t)?.45:.2;
+  else return 0;
+  return g?v*.1:v}},
+ {id:"academia",name:"Dark Academia",lvl:"Smart-casual",sig:2,pal:["brown","green","red","black","beige","yellow"],blurb:"Turtlenecks, knits and tweed in deep browns, greens and burgundy",fit:it=>{const t=fx(it);
+  if(it.cat==="top")return/turtle|oxford|button|knit|sweater|tartan|plaid|flannel/.test(t)?.9:/long sleeve/.test(t)?.5:.3;
+  if(it.cat==="bottom")return/pleated|trouser|tweed|plaid|tartan|dress pants|corduroy/.test(t)?.95:/chino/.test(t)?.6:/straight|jeans/.test(t)?.5:.2;
+  if(it.cat==="outer")return/blazer|tweed|cardigan|overcoat|coat/.test(t)?.95:/sweater/.test(t)?.8:/vest/.test(t)?.7:.3;
+  if(it.cat==="shoes")return/loafer|boot|oxford|derby/.test(t)?.9:.25;
+  return 0}}
 ];
-const styleFit=(st,it)=>clamp01(st.fit(it));
+// Style fit: the style's own rating, reduced a little when the piece is outside the style's usual color palette (and Old Money avoids bright colors)
+const styleFit=(st,it)=>{let v=st.fit(it);if(st.pal&&v>0){const P=new Set([...st.pal,...st.pal.map(grpOf)]);if(!allFams(it).some(f=>P.has(f)||P.has(grpOf(f))))v*=.75}if(st.id==="oldmoney"&&isBright(it))v*=.5;return clamp01(v)};
 // Does this piece list read as one of the styles? Returns the best style name, or "" (used for the badge on outfit cards)
 function styleOf(parts){let best="",bv=0;STYLES.forEach(st=>{const f=parts.map(p=>styleFit(st,p));if(f.some(x=>x<.5)||f.filter(x=>x>=.85).length<st.sig)return;const a=f.reduce((x,y)=>x+y,0)/f.length;if(a>bv){bv=a;best=st.name}});return best}
 // Is this piece allowed by the occasion / weather filters? (Cold also lets guessed-mild T-shirts through as base layers)
@@ -624,6 +680,7 @@ function buildStyles(){
  const groups=[],used=new Map();
  STYLES.forEach(st=>{
   if(styleF&&st.id!==styleF)return;
+  if(lvlF&&!st.lvl.includes(lvlF))return;
   const pick=(cat,k)=>{if(fo&&fo.cat===cat)return[fo];return items.filter(i=>i.cat===cat&&inPool(i)&&styleFit(st,i)>=.5).sort((a,b)=>(styleFit(st,b)+noise(b.id))-(styleFit(st,a)+noise(a.id))).slice(0,k)};
   const T=pick("top",10),B=pick("bottom",8),O=pick("outer",6),S=pick("shoes",5);
   if(!T.length||!B.length)return;
@@ -649,7 +706,7 @@ function buildStyles(){
    best.parts.forEach(p=>loc.set(p.id,(loc.get(p.id)||0)+1))}
   for(const x of list){if(chosen.length>=N)break;const k=x.parts[0].id+"|"+x.parts[1].id;if(pairs.has(k)||chosen.includes(x))continue;chosen.push(x);pairs.add(k)}
   chosen.forEach(x=>x.parts.forEach(p=>used.set(p.id,(used.get(p.id)||0)+1)));
-  if(chosen.length)groups.push({name:st.name,blurb:st.blurb,list:chosen,top:chosen[0].rank})});
+  if(chosen.length)groups.push({name:st.name,lvl:st.lvl,blurb:st.blurb,list:chosen,top:chosen[0].rank})});
  return groups.sort((a,b)=>b.top-a.top)}
 
 // DRAWING THE PAGE: redraws filters, wardrobe grid, dropdown and outfit cards from the current state
@@ -660,10 +717,12 @@ function render(){
  $("focus").innerHTML='<option value="">Outfits from everything</option>'+CATS.map(([k,l])=>{const g=items.filter(i=>i.cat===k);return g.length?`<optgroup label="${l}">${g.map(i=>`<option value="${i.id}"${String(i.id)===String(focusId)?" selected":""}>${i.statement?"★ ":""}${esc(title(i))}</option>`).join("")}</optgroup>`:""}).join("");
  $("occChips").innerHTML=[["","Any"],...OCC].map(([k,l])=>`<button class="chip${k===occF?" on":""}" data-occ="${k}">${l}</button>`).join("");
  $("modeChips").innerHTML=[["style","Inspired by styles"],["color","Color matched"]].map(([k,l])=>`<button class="chip${k===mode?" on":""}" data-mode="${k}">${l}</button>`).join("");
- $("styleFlt").hidden=mode!=="style";
+ $("styleFlt").hidden=mode!=="style";$("lvlFlt").hidden=mode!=="style";
+ $("lvlChips").innerHTML=[["","Any"],["Casual","Casual"],["Smart-casual","Smart-casual"]].map(([k,l])=>`<button class="chip${k===lvlF?" on":""}" data-lvl="${k}">${l}</button>`).join("");
  $("styleChips").innerHTML=[["","All styles"],...STYLES.map(x=>[x.id,x.name])].map(([k,l])=>`<button class="chip${k===styleF?" on":""}" data-style="${k}">${l}</button>`).join("")+`<button class="chip" data-shuffle="1">↻ Shuffle</button>`;
  const pills=[`<span class="pill">${mode==="style"?"Inspired":"Color matched"}</span>`],P=(t,k)=>pills.push(`<span class="pill">${esc(t)}<button data-fclr="${k}" aria-label="Remove filter">×</button></span>`);
  if(mode==="style"&&styleF)P((STYLES.find(x=>x.id===styleF)||{name:""}).name,"style");
+ if(mode==="style"&&lvlF)P(lvlF,"lvl");
  if(occF)P(OCC.find(x=>x[0]===occF)[1],"occ");
  if(wxF)P(WX.find(x=>x[0]===wxF)[1],"wx");
  const fi=items.find(i=>String(i.id)===String(focusId));if(fi)P("Around: "+title(fi),"focus");
@@ -691,7 +750,7 @@ function render(){
  $("savedCount").textContent=sp.length?`(${sp.length})`:"";
  $("sugHead").innerHTML='<span class="n">&#10022;</span>'+(mode==="style"?"Inspired outfits":"Suggestions");
  const noRes=`<div class="empty">${(occF||wxF)?"No outfits fit these filters yet — try Any, or add more pieces.":focusId?"Nothing to pair with this piece yet — add more pieces from other categories.":hasBase?"Add shoes or outerwear options to see more combos.":"Add at least one top and one bottom (or a dress) to see outfits."}</div>`;
- if(mode==="style")$("outfits").innerHTML=groups.length?groups.map(g=>`<div class="sty"><h3>${esc(g.name)}</h3><p class="sb">${esc(g.blurb)}</p>${g.list.length>1?`<span class="hx">${g.list.length} outfits · <span class="tch">swipe →</span><span class="msu">drag or use the arrows →</span></span>`:""}<div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div class="sgrid" tabindex="0">${g.list.map(x=>card(x.parts,x.sc,g.name)).join("")}</div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div></div>`).join(""):(items.length?`<div class="empty">No style outfits yet — add more tops, bottoms and shoes, or clear the filters.</div>`:noRes);
+ if(mode==="style")$("outfits").innerHTML=groups.length?groups.map(g=>`<div class="sty"><h3>${esc(g.name)} <span class="lvl">${esc(g.lvl||"")}</span></h3><p class="sb">${esc(g.blurb)}</p>${g.list.length>1?`<span class="hx">${g.list.length} outfits · <span class="tch">swipe →</span><span class="msu">drag or use the arrows →</span></span>`:""}<div class="rowwrap"><button class="arr l" data-arr="-1" aria-label="Scroll left">‹</button><div class="sgrid" tabindex="0">${g.list.map(x=>card(x.parts,x.sc,g.name)).join("")}</div><button class="arr r" data-arr="1" aria-label="Scroll right">›</button></div></div>`).join(""):(items.length?`<div class="empty">No style outfits yet — add more tops, bottoms and shoes, or clear the filters.</div>`:noRes);
  else $("outfits").innerHTML=o.length?o.map(x=>card(x.parts,x.sc)).join("")
   :`<div class="empty">${(occF||wxF)?"No outfits fit these filters yet — try Any, or add more pieces.":focusId?"Nothing to pair with this piece yet — add more pieces from other categories.":hasBase?"Add shoes or outerwear options to see more combos.":"Add at least one top and one bottom (or a dress) to see outfits."}</div>`}
 // OUTFIT CARD: photos, reason, match score, color strip, layering note, graphic-tee warning and the Save / Saved button
@@ -804,7 +863,7 @@ $("cSelOnly").onclick=()=>{cSelOnly=!cSelOnly;renderPick()};
 $("fOpen").onclick=()=>$("fsheet").classList.add("on");
 $("fDone").onclick=()=>$("fsheet").classList.remove("on");
 $("fsheet").onclick=e=>{if(e.target.id==="fsheet")$("fsheet").classList.remove("on")};
-$("fReset").onclick=()=>{styleF="";occF="";wxF="";focusId="";Object.keys(colorF).forEach(k=>colorF[k]=[]);$("useOuter").checked=true;render()};
+$("fReset").onclick=()=>{styleF="";lvlF="";occF="";wxF="";focusId="";Object.keys(colorF).forEach(k=>colorF[k]=[]);$("useOuter").checked=true;render()};
 $("colAdd").onclick=()=>{const v=$("colPick").value,a=colorF[cScope];if(!a.includes(v))a.push(v);render()};
 $("colClr").onclick=()=>{Object.keys(colorF).forEach(k=>colorF[k]=[]);render()};
 document.addEventListener("change",e=>{const l=e.target.closest("[data-lsel]");if(l)cLayer[l.dataset.lsel]=l.value});
@@ -822,7 +881,7 @@ document.addEventListener("click",e=>{
  const x=e.target.closest("[data-x]");if(x){items=items.filter(i=>String(i.id)!==x.dataset.x);save();render()}
  const sv=e.target.closest("[data-sv]");if(sv)toggleSaved(sv.dataset.sv.split(","))
  const cf=e.target.closest("[data-cf]");if(cf){cF=cf.dataset.cf;renderPick()}
- const fc=e.target.closest("[data-fclr]");if(fc){const k=fc.dataset.fclr;if(k==="style")styleF="";else if(k==="occ")occF="";else if(k==="wx")wxF="";else if(k==="focus")focusId="";else if(k==="outer")$("useOuter").checked=true;else if(k.indexOf("col:")===0)colorF[k.slice(4)]=[];render()}
+ const fc=e.target.closest("[data-fclr]");if(fc){const k=fc.dataset.fclr;if(k==="style")styleF="";else if(k==="lvl")lvlF="";else if(k==="occ")occF="";else if(k==="wx")wxF="";else if(k==="focus")focusId="";else if(k==="outer")$("useOuter").checked=true;else if(k.indexOf("col:")===0)colorF[k.slice(4)]=[];render()}
  const cs=e.target.closest("[data-cscope]");if(cs){cScope=cs.dataset.cscope;render()}
  const cl=e.target.closest("[data-colf]");if(cl){const a=colorF[cScope],v=cl.dataset.colf,i=a.indexOf(v);if(i>=0)a.splice(i,1);else a.push(v);render()}
  const bc=e.target.closest("[data-bcol]");if(bc){const v=bc.dataset.bcol,i=cCol.indexOf(v);if(i>=0)cCol.splice(i,1);else cCol.push(v);renderPick()}
