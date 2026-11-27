@@ -481,7 +481,7 @@ function reason(parts){
 const OCC=[["casual","Casual"],["work","Work"],["night","Night out"]],WX=[["cold","Cold"],["mild","Mild"],["hot","Hot"]];
 let occF="",wxF="",tab="closet",wardF="",mode="style",styleF="",lvlF="",seed=0;
 // TYPE RULES: keywords in a piece's type decide which occasions it suits (casual, work, night out). Your own choice in the editor overrides these
-const RX={casual:/vest|jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
+const RX={casual:/polo|crop|vest|jorts|leggings|track pants|corduroy|overalls|flared|bootcut|capri|sandal|slide|slip-on|puffer|parka|fleece|t-shirt|tee|tank|hoodie|sweatshirt|jogger|sweatpants|short|running|dunk|air force|jordan|vans|converse|cargo|windbreaker|henley|jeans|denim|sneaker|samba|new balance|bomber|sundress/,
  work:/pleated|trouser|wide-leg pants|midi skirt|linen pants|dress shoe|button|dress pants|chino|blazer|loafer|trench|polo|cardigan|shirt dress|sweater|slack|oxford|straight-leg|white sneakers/,
  night:/mini skirt|dress shoe|leather|dress|heel|boot|blazer|mini|loafer|maxi|bomber/};
 // Shows Casual, Dressy or Versatile on a card, based on its occasion tags
@@ -493,7 +493,7 @@ function wxTags(it){if(it.wx&&it.wx.length)return it.wx;const t=(it.type||"").to
  if(/puffer jacket|coat|parka|boot|winter/.test(t))return["cold"];
  if(/short|jorts|capri|skirt|sundress|mini|maxi|sandal|slide|tank/.test(t))return["mild","hot"];
  if(/long sleeve/.test(t)||/sweater|sweatshirt|hoodie|vest|gilet|cardigan|trench|leather|jacket|bomber|windbreaker|sweatpants|jogger|cargo|jeans|denim|dress pants|chino|blazer|corduroy|trouser|wide-leg|pleated|leggings|track pants|flared|bootcut|overalls/.test(t))return["cold","mild"];
- if(/t-shirt|\btee\b|henley|polo|linen/.test(t))return["mild","hot"];
+ if(/t-shirt|\btee\b|crop|henley|polo|linen/.test(t))return["mild","hot"];
  return["cold","mild","hot"]}
 // FILTER CHECK: does a piece pass the current occasion and weather filters?
 function wxOK(it,w){return !w||wxTags(it).includes(w)}
@@ -584,7 +584,7 @@ const isEarthy=it=>/beige|brown|orange|green|olive|tan|cream/.test(it.name||"");
 const isNeut=it=>it.neutral||/beige|white|grey|black|charcoal|denim|navy|brown|cream/.test(it.name||"");
 const STYLES=[
  {id:"street",lvl:"Casual",name:"Streetwear",sig:2,blurb:"Baggy fits, graphic tees and hoodies with chunky sneakers",fit:it=>{const t=fx(it);
-  if(it.cat==="top")return/compression|tank|button|polo|turtle/.test(t)?.3:/graphic|baggy|oversized|jersey/.test(t)?.9:/long sleeve/.test(t)?.7:/tee|t-shirt|shirt/.test(t)?.6:.4;
+  if(it.cat==="top")return/crop/.test(t)?.85:/compression|tank|button|polo|turtle/.test(t)?.3:/graphic|baggy|oversized|jersey/.test(t)?.9:/long sleeve/.test(t)?.7:/tee|t-shirt|shirt/.test(t)?.6:.4;
   if(it.cat==="bottom")return/skinny/.test(t)?.2:/baggy|cargo|carpenter|jorts|wide|loose/.test(t)?.9:/sweatpants|jogger/.test(t)?.55:/flared/.test(t)?.4:/jeans|denim/.test(t)?.5:/chino/.test(t)?.3:.4;
   if(it.cat==="outer")return/hoodie|zip/.test(t)?.9:/jacket|vest/.test(t)?.65:/sweater/.test(t)?.55:.4;
   if(it.cat==="shoes")return/air force|af1|jordan|dunk|new balance|1906|nike|yeezy|samba/.test(t)?.9:/sneaker/.test(t)?.6:.25;
@@ -598,7 +598,7 @@ const STYLES=[
   return clamp01(v)}},
  {id:"retro",lvl:"Casual",name:"Retro Sports",sig:1,blurb:"Team jerseys, varsity-style pieces and classic sneakers",fit:it=>{const t=fx(it);
   if(it.cat!=="shoes"&&TEAM.test(t))return.95;
-  if(it.cat==="top")return/tee|t-shirt|jersey/.test(t)?.5:.3;
+  if(it.cat==="top")return/crop/.test(t)?.75:/tee|t-shirt|jersey/.test(t)?.5:.3;
   if(it.cat==="bottom")return/baggy/.test(t)?.65:/jorts|sweatpants/.test(t)?.6:/cargo/.test(t)?.5:/jeans|denim/.test(t)?.55:/chino|flared/.test(t)?.4:.35;
   if(it.cat==="outer")return/hoodie|sweater|denim jacket/.test(t)?.6:.4;
   if(it.cat==="shoes")return/nike|jordan|air force|dunk|puma|new balance|adidas/.test(t)?.8:/sneaker/.test(t)?.6:.25;
@@ -666,7 +666,7 @@ const STYLES=[
   return 0}}
 ];
 // Style fit: the style's own rating, reduced a little when the piece is outside the style's usual color palette (and Old Money avoids bright colors)
-const styleFit=(st,it)=>{let v=st.fit(it);if(st.pal&&v>0){const P=new Set([...st.pal,...st.pal.map(grpOf)]);if(!allFams(it).some(f=>P.has(f)||P.has(grpOf(f))))v*=.75}if(st.id==="oldmoney"&&isBright(it))v*=.5;return clamp01(v)};
+const styleFit=(st,it)=>{let v=st.fit(it);if(st.pal&&v>0){const P=new Set([...st.pal,...st.pal.map(grpOf)]);if(!allFams(it).some(f=>P.has(f)||P.has(grpOf(f))))v*=.75}if(st.id==="oldmoney"&&isBright(it))v*=.5;if(["prep","smart","oldmoney","academia"].includes(st.id)&&/crop/.test(fx(it)))v*=.6;return clamp01(v)};
 // Does this piece list read as one of the styles? Returns the best style name, or "" (used for the badge on outfit cards)
 function styleOf(parts){let best="",bv=0;STYLES.forEach(st=>{const f=parts.map(p=>styleFit(st,p));if(f.some(x=>x<.5)||f.filter(x=>x>=.85).length<st.sig)return;const a=f.reduce((x,y)=>x+y,0)/f.length;if(a>bv){bv=a;best=st.name}});return best}
 // Is this piece allowed by the occasion / weather filters? (Cold also lets guessed-mild T-shirts through as base layers)
@@ -944,7 +944,7 @@ $("eAI").onclick=()=>{const it=ed(),c=document.createElement("canvas"),im=new Im
  im.onload=()=>{c.width=im.naturalWidth*2;c.height=im.naturalHeight*2;c.getContext("2d").drawImage(im,0,0,c.width,c.height);it.auto=false;identify(it,c);fillEdit()};im.src=it.thumb};
 
 // TYPE SUGGESTIONS: the suggestion list shown in the Type field for each category. You can still type anything
-const TYPES={top:["T-shirt","Graphic tee","Long sleeve tee","Zip-up hoodie","Polo","Button-up shirt","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Flared jeans","Bootcut jeans","Wide-leg jeans","Jorts","Denim shorts","Shorts","Cargo shorts","Cargo pants","Chinos","Dress pants","Pleated trousers","Wide-leg pants","Corduroy pants","Linen pants","Joggers","Sweatpants","Track pants","Leggings","Capris","Mini skirt","Midi skirt","Maxi skirt","Overalls"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Vest","Puffer vest","Fleece vest","Zip-up hoodie","Winter jacket","Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
+const TYPES={top:["T-shirt","Cropped tee","Graphic tee","Polo","Long sleeve tee","Zip-up hoodie","Button-up shirt","Cropped button-up","Hoodie","Sweater","Crewneck sweatshirt","Tank top","Henley"],bottom:["Straight-leg jeans","Skinny jeans","Baggy jeans","Flared jeans","Bootcut jeans","Wide-leg jeans","Jorts","Denim shorts","Shorts","Cargo shorts","Cargo pants","Chinos","Dress pants","Pleated trousers","Wide-leg pants","Corduroy pants","Linen pants","Joggers","Sweatpants","Track pants","Leggings","Capris","Mini skirt","Midi skirt","Maxi skirt","Overalls"],dress:["Sundress","Maxi dress","Mini dress","Shirt dress"],outer:["Vest","Puffer vest","Fleece vest","Zip-up hoodie","Winter jacket","Puffer jacket","Denim jacket","Bomber jacket","Leather jacket","Windbreaker","Trench coat","Blazer","Cardigan"],shoes:["Sneakers","Boots","Loafers","Sandals","Slides","Heels","Running shoes","Dress shoes","Slip-ons"]};
 function fillTypes(){const c=$("eCat").value;$("types").innerHTML=(TYPES[c]||[]).map(t=>`<option value="${t}">`).join("")}
 $("eCat").addEventListener("change",fillTypes);$("eCat").addEventListener("change",shoeUI);$("eBrand").oninput=e=>{ed().brand=e.target.value.trim()};
 const _oe=openEdit;openEdit=function(id){_oe(id);fillTypes()};
